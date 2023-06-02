@@ -60,6 +60,11 @@ from . import xwinograd
 from . import pawsx
 from . import xnli
 from . import mgsm
+from . import xstorycloze_mt
+from . import mgsm_mt
+from . import xcopa_mt
+from . import pawsx_mt
+from . import xnli_mt
 
 ########################################
 # Translation tasks
@@ -325,6 +330,11 @@ TASK_REGISTRY = {
     **pawsx.construct_tasks(),
     **xnli.construct_tasks(),
     **mgsm.construct_tasks(),
+    **xstorycloze_mt.create_all_tasks(),
+    **mgsm_mt.create_all_tasks(),
+    **xcopa_mt.create_all_tasks(),
+    **pawsx_mt.create_all_tasks(),
+    **xnli_mt.create_all_tasks(),
 }
 
 
