@@ -53,6 +53,22 @@ _MODELS = [
     "nllb-200-distilled-1.3B",
     "nllb-200-1.3B",
     "nllb-200-3.3B",
+    "xglm-564M",
+    "xglm-1.7B",
+    "xglm-2.9B",
+    "xglm-4.5B",
+    "xglm-7.5B",
+    "bloom-560m",
+    "bloom-1b1",
+    "bloom-1b7",
+    "bloom-3b",
+    "bloom-7b1",
+    "llama-7B",
+    "llama-13B",
+    "llama-30B",
+    # "llama-65B",
+    "RedPajama-INCITE-Base-3B-v1",
+    "RedPajama-INCITE-7B-Base",
 ]
 
 
