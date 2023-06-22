@@ -45,6 +45,9 @@ _MODELS = [
     # "llama-65B",
     "RedPajama-INCITE-Base-3B-v1",
     "RedPajama-INCITE-7B-Base",
+    "open_llama_3b",
+    "open_llama_7b",
+    "open_llama_13b",
 ]
 
 
