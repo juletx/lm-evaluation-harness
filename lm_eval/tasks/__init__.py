@@ -4,6 +4,7 @@ from typing import List, Union
 import sacrebleu
 import lm_eval.base
 
+from . import babi
 from . import superglue
 from . import glue
 from . import arc
@@ -65,6 +66,7 @@ from . import mgsm_mt
 from . import xcopa_mt
 from . import pawsx_mt
 from . import xnli_mt
+from . import scrolls
 
 ########################################
 # Translation tasks
@@ -97,6 +99,7 @@ all_translation_benchmarks = {
 
 
 TASK_REGISTRY = {
+    "babi": babi.Babi,
     # GLUE
     "cola": glue.CoLA,
     "mnli": glue.MNLI,
@@ -335,6 +338,7 @@ TASK_REGISTRY = {
     **xcopa_mt.create_all_tasks(),
     **pawsx_mt.create_all_tasks(),
     **xnli_mt.create_all_tasks(),
+    **scrolls.construct_tasks(),
 }
 
 
