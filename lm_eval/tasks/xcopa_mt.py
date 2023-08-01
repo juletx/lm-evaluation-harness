@@ -48,6 +48,19 @@ _MODELS = [
     "open_llama_3b",
     "open_llama_7b",
     "open_llama_13b",
+    "open_llama_3b_v2",
+    "open_llama_7b_v2",
+    "falcon-7b",
+    "xgen-7b-4k-base",
+    "xgen-7b-8k-base",
+    "xgen-7b-8k-inst",
+    "polylm-1.7b",
+    "polylm-13b",
+    "polylm-multialpaca-13b",
+    "Llama-2-7b-hf",
+    "Llama-2-13b-hf",
+    "Llama-2-7b-chat-hf",
+    "Llama-2-13b-chat-hf",
 ]
 
 
