@@ -33,7 +33,7 @@ repos:
     rev: 22.3.0
     hooks:
       - id: black
-        language_version: python3.8
+        language_version: python3.9
   - repo: https://github.com/codespell-project/codespell
     rev: v2.1.0
     hooks:
@@ -46,6 +46,11 @@ repos:
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.5.1
     hooks:
-    - id: mypy
-      additional_dependencies: [".[sentencepiece,multilingual,promptsource,gptq]", "types-PyYAML", "types-requests"]
-      exclude: ^tests/.*$
+      - id: mypy
+        additional_dependencies:
+          [
+            ".[sentencepiece,multilingual,promptsource,gptq]",
+            "types-PyYAML",
+            "types-requests",
+          ]
+        exclude: ^tests/.*$
