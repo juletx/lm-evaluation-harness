@@ -27,7 +27,7 @@ def gen_config_yamls(output_dir: str, overwrite: bool) -> None:
                 yaml.dump(
                     {
                         "include": "oposizioak_es"
-                        if "es" in config
+                        if "oposizioak_es" in config
                         else "oposizioak_eu",
                         "dataset_name": config,
                         "task": f"oposizioak_{config}",
