@@ -748,18 +748,18 @@ class ConfigurableTask(Task):
 
     def fewshot_docs(self):
         if self.config.fewshot_split is not None:
+            if self.config.process_docs is not None:
+                return self.config.process_docs(self.dataset[self.config.fewshot_split])
             return self.dataset[self.config.fewshot_split]
-        else:
-            if self.config.num_fewshot > 0:
-                eval_logger.warning(
-                    f"Task '{self.config.task}': "
-                    "num_fewshot > 0 but fewshot_split is None. "
-                    "using preconfigured rule."
-                )
-            return super().fewshot_docs()
+        if self.config.num_fewshot > 0:
+            eval_logger.warning(
+                f"Task '{self.config.task}': "
+                "num_fewshot > 0 but fewshot_split is None. "
+                "using preconfigured rule."
+            )
+        return super().fewshot_docs()
 
     def apply_filters(self):
-
         if hasattr(self, "_filters"):
             for f in self._filters:
                 f.apply(self._instances, self.task_docs)
@@ -967,7 +967,6 @@ class ConfigurableTask(Task):
         )
 
     def process_results(self, doc, results):
-
         if callable(self.config.process_results):
             return self.config.process_results(doc, results)
 
@@ -1104,7 +1103,9 @@ class ConfigurableTask(Task):
                                 predictions=[result],
                                 **self._metric_fn_kwargs[metric],
                             )
-                        except TypeError:  # TODO: this is hacky and I don't want to do it
+                        except (
+                            TypeError
+                        ):  # TODO: this is hacky and I don't want to do it
                             result_score = self._metric_fn_list[metric](
                                 [gold_option, result]
                             )
@@ -1123,7 +1124,9 @@ class ConfigurableTask(Task):
                             predictions=[result],
                             **self._metric_fn_kwargs[metric],
                         )
-                    except TypeError:  # needed for now in order to use a different interface between our own metrics and HF Evaluate metrics
+                    except (
+                        TypeError
+                    ):  # needed for now in order to use a different interface between our own metrics and HF Evaluate metrics
                         result_score = self._metric_fn_list[metric]([gold, result])
                     if isinstance(result_score, dict):
                         # TODO: this handles the case where HF evaluate returns a dict.
