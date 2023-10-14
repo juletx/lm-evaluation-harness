@@ -1,0 +1,17 @@
+task: galdeketaun
+dataset_path: HiTZ/galdeketaun
+dataset_name: null
+validation_split: null
+test_split: test
+fewshot_split: test
+output_type: multiple_choice
+doc_to_text: "Galdera: {{question}}\nA: {{candidates[0]}}\nB: {{candidates[1]}}\nC: {{candidates[2]}}\nD: {{candidates[3]}}\nErantzuna:"
+doc_to_choice: ["A", "B", "C", "D"]
+doc_to_target: answer
+metric_list:
+  - metric: acc
+    aggregation: mean
+    higher_is_better: true
+  - metric: acc_norm
+    aggregation: mean
+    higher_is_better: true
