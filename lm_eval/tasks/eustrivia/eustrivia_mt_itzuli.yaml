@@ -1,0 +1,4 @@
+task: eustrivia_mt_itzuli
+include: eustrivia_mt.yaml
+test_split: translatetestitzuli
+fewshot_split: translatetestitzuli
