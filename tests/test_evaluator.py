@@ -1,16 +1,15 @@
-import os
-
 # import lm_eval.base as base
-import lm_eval.api.registry as registry
-import lm_eval.tasks as tasks
+from typing import List
+
+import pytest
 
 # import lm_eval.models as models
 import lm_eval.api as api
 import lm_eval.evaluator as evaluator
-from typing import List
-import random
-import pytest
+import lm_eval.tasks as tasks
 
+
+tasks.initialize_tasks()
 
 # TODO: more fine grained unit tests rather than this big honking integration
 # test once we break evaluator into smaller, more manageable pieces

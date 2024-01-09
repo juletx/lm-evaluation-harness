@@ -1,9 +1,6 @@
 import random
 import itertools
-import json
 import collections
-import logging
-import sys
 
 import torch
 
@@ -18,16 +15,10 @@ import lm_eval.api.registry
 from lm_eval.utils import (
     positional_deprecated,
     run_task_tests,
-    make_table,
-    create_iterator,
     get_git_commit_hash,
+    simple_parse_args_string,
+    eval_logger,
 )
-
-from lm_eval.logger import eval_logger
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-logger.addHandler(logging.StreamHandler(sys.stdout))
 
 
 @positional_deprecated
@@ -46,6 +37,7 @@ def simple_evaluate(
     decontamination_ngrams_path=None,
     write_out: bool = False,
     log_samples: bool = True,
+    gen_kwargs: str = None,
 ):
     """Instantiate and evaluate a model on a list of tasks.
 
@@ -76,6 +68,9 @@ def simple_evaluate(
         If True, write out an example document and model input for checking task integrity
     :param log_samples: bool
         If True, write out all model outputs and documents for per-sample measurement and post-hoc analysis
+    :param gen_kwargs: str
+        String arguments for model generation
+        Ignored for all tasks with loglikelihood output_type
     :return
         Dictionary of results
     """
@@ -88,6 +83,14 @@ def simple_evaluate(
     assert (
         tasks != []
     ), "No tasks specified, or no tasks found. Please verify the task names."
+
+    if gen_kwargs is not None:
+        gen_kwargs = simple_parse_args_string(gen_kwargs)
+        eval_logger.warning(
+            "generation_kwargs specified through cli, these settings will be used over set parameters in yaml tasks."
+        )
+        if gen_kwargs == "":
+            gen_kwargs = None
 
     if isinstance(model, str):
         if model_args is None:
@@ -111,7 +114,9 @@ def simple_evaluate(
             use_cache
             # each rank receives a different cache db.
             # necessary to avoid multiple writes to cache at once
-            + "_rank" + str(lm.rank) + ".db",
+            + "_rank"
+            + str(lm.rank)
+            + ".db",
         )
 
     task_dict = lm_eval.tasks.get_task_dict(tasks)
@@ -123,14 +128,21 @@ def simple_evaluate(
                 continue
 
         config = task_obj._config
+        if config["output_type"] == "generate_until" and gen_kwargs is not None:
+            config["generation_kwargs"].update(gen_kwargs)
+
         if num_fewshot is not None:
-            if config["num_fewshot"] > 0:
+            if config["num_fewshot"] == 0:
+                eval_logger.info(
+                    f"num_fewshot has been set to 0 for {task_name} in its config. Manual configuration will be ignored."
+                )
+            else:
                 default_num_fewshot = config["num_fewshot"]
                 eval_logger.warning(
                     f"Overwriting default num_fewshot of {task_name} from {default_num_fewshot} to {num_fewshot}"
                 )
 
-            task_obj._config["num_fewshot"] = num_fewshot
+                task_obj._config["num_fewshot"] = num_fewshot
 
     if check_integrity:
         run_task_tests(task_list=tasks)
@@ -160,6 +172,7 @@ def simple_evaluate(
             "use_cache": use_cache,
             "limit": limit,
             "bootstrap_iters": bootstrap_iters,
+            "gen_kwargs": gen_kwargs,
         }
         results["git_hash"] = get_git_commit_hash()
         return results
@@ -219,17 +232,18 @@ def evaluate(
     padding_requests = collections.defaultdict(int)
     # store the hierarchy to do proper ordering
     task_hierarchy = collections.defaultdict(list)
-    # store the ordering of tasks and groups
-    task_order = collections.defaultdict(int)
-    # store the aggregation for aggregating across tasks in the same group
-    sample_agg_fn = collections.defaultdict(dict)
+    # store num-fewshot value per task
+    num_fewshot = collections.defaultdict(int)
 
     # get lists of each type of request
     for task_name, task in task_dict.items():
         if type(task) == tuple:
             group_name, task = task
             task_hierarchy[group_name].append(task_name)
+            versions[group_name] = "N/A"
+
         else:
+            group_name = None
             task_hierarchy[task_name] = []
 
         if task is None:
@@ -237,6 +251,22 @@ def evaluate(
 
         versions[task_name] = task.VERSION
         configs[task_name] = dict(task.dump_config())
+
+        if "num_fewshot" in configs[task_name]:
+            n_shot = configs[task_name]["num_fewshot"]
+        else:
+            n_shot = 0
+        num_fewshot[task_name] = n_shot
+
+        if "task_alias" in configs[task_name]:
+            results[task_name]["alias"] = configs[task_name]["task_alias"]
+
+        if (
+            ("group_alias" in configs[task_name])
+            and (group_name not in results)
+            and (group_name is not None)
+        ):
+            results[group_name]["alias"] = configs[task_name]["group_alias"]
 
         if limit is not None:
             if task.has_test_docs():
@@ -249,7 +279,7 @@ def evaluate(
 
         task.build_all_requests(limit=limit, rank=lm.rank, world_size=lm.world_size)
 
-        eval_logger.info(
+        eval_logger.debug(
             f"Task: {task_name}; number of requests on this rank: {len(task.instances)}"
         )
 
@@ -264,12 +294,9 @@ def evaluate(
                     eval_logger.info(f"Request: {str(inst)}")
 
         # aggregate Instances by LM method requested to get output.
-        reqtype = (
-            "loglikelihood"
-            if task.OUTPUT_TYPE == "multiple_choice"
-            else task.OUTPUT_TYPE
-        )  # TODO: this is hacky, fix in task.py
-        requests[reqtype].extend(task.instances)
+        for instance in task.instances:
+            reqtype = instance.request_type
+            requests[reqtype].append(instance)
 
         if lm.world_size > 1:
             instances_rnk = torch.tensor(len(task._instances), device=lm.device)
@@ -409,34 +436,6 @@ def evaluate(
 
     if lm.rank == 0:
 
-        ### Get task ordering for correct sample-wide aggregation
-        group_to_task = {}
-        for group in task_hierarchy.keys():
-            if group not in task_order:
-                task_order[group] = 0
-
-            if len(task_hierarchy[group]) > 0:
-                group_to_task[group] = task_hierarchy[group].copy()
-
-            for task in task_hierarchy[group]:
-
-                if task in task_order:
-                    task_order[task] += 1
-                else:
-                    task_order[task] = 1 + task_order[group]
-
-                if task in task_hierarchy:
-                    group_to_task[group].remove(task)
-                    group_to_task[group].extend(task_hierarchy[task])
-
-        task_to_group = {}
-        for group in group_to_task:
-            for task in group_to_task[group]:
-                if task in task_to_group:
-                    task_to_group[task].append(group)
-                else:
-                    task_to_group[task] = [group]
-
         ### Aggregate results over all datapoints ###
         # aggregate results ; run bootstrap CIs
         for (task_name, key, metric), items in vals.items():
@@ -449,23 +448,8 @@ def evaluate(
                 group_name = None
 
             agg_fn = task.aggregation()[metric]
-            task_score = agg_fn(items)
-
-            if group_name is not None:
-                sample_metric_key = metric + "(sample agg)," + key
-                for grouping in task_to_group[task_name]:
-                    if metric_key in results[grouping]:
-                        results[grouping][metric_key].append(task_score)
-                    else:
-                        results[grouping][metric_key] = [task_score]
-
-                    if sample_metric_key in results[grouping]:
-                        results[grouping][sample_metric_key] += items
-                    else:
-                        results[grouping][sample_metric_key] = items.copy()
-                        sample_agg_fn[grouping][sample_metric_key] = agg_fn
-
-            results[task_name][metric_key] = task_score
+            results[task_name][metric_key] = agg_fn(items)
+            results[task_name]["samples"] = len(items)
 
             # hotfix: bleu, chrf, ter seem to be really expensive to bootstrap
             # so we run them less iterations. still looking for a cleaner way to do this
@@ -477,43 +461,150 @@ def evaluate(
                     else bootstrap_iters,
                 )
 
-                if stderr is not None:
+                if stderr is not None and len(items) > 1:
                     results[task_name][metric + "_stderr" + "," + key] = stderr(items)
+                else:
+                    results[task_name][metric + "_stderr" + "," + key] = "N/A"
 
         if bool(results):
-            for task_or_group in results.keys():
-                for metric in results[task_or_group].keys():
-                    if type(results[task_or_group][metric]) == list:
-                        if "(sample agg)" in metric:
-                            results[task_or_group][metric] = sample_agg_fn[
-                                task_or_group
-                            ][metric](results[task_or_group][metric])
-                        else:
-                            results[task_or_group][metric] = np.average(
-                                results[task_or_group][metric]
-                            )
-                        versions[task_or_group] = "N/A"
+            for group, task_list in reversed(task_hierarchy.items()):
+                if task_list == []:
+                    total_size = results[group]["samples"]
+                else:
+                    total_size = 0
 
-        for task_name, task in task_dict.items():
-            if type(task) == tuple:
-                group_name, task = task
-                order = task_order[group_name]
-                tabbed_name = "-" * order + group_name
-                results_agg[tabbed_name] = results[group_name]
-                versions[tabbed_name] = versions[group_name]
-                if order == 0:
-                    groups_agg[group_name] = results[group_name]
+                    for task in task_list:
+                        metrics = results[task].copy()
 
-            order = task_order[task_name]
-            tabbed_name = "-" * order + task_name
-            results_agg[tabbed_name] = results[task_name]
-            versions[tabbed_name] = versions[task_name]
+                        if "alias" in metrics:
+                            metrics.pop("alias")
+
+                        current_size = metrics.pop("samples")
+                        # TODO: There should be a way for users
+                        #       to toggle between weighted and
+                        #       unweighted averaging
+                        # For unweighted averaging, use:
+                        #     current_size = 1
+
+                        all_stderr = []
+                        for metric in [
+                            key for key in metrics.keys() if "_stderr" not in key
+                        ]:
+                            stderr = "_stderr,".join(metric.split(","))
+                            stderr_score = results[task][stderr]
+                            var_score = stderr_score**2
+                            metric_score = results[task][metric]
+
+                            all_stderr.append(stderr)
+
+                            if metric in results[group]:
+                                results[group][metric] = (
+                                    results[group][metric] * total_size
+                                    + metric_score * current_size
+                                ) / (total_size + current_size)
+                                # $$s_z^2 = \frac{(n-1) s_x^2 + (m-1) s_y^2}{n+m-1} + \frac{nm(\bar x - \bar y)^2}{(n+m)(n+m-1)}.$$
+                                results[group][stderr] = (
+                                    (total_size - 1) * results[group][stderr]
+                                    + (current_size - 1) * var_score
+                                ) / (
+                                    total_size + current_size - 1
+                                ) + total_size * current_size / (
+                                    (total_size + current_size)
+                                    * (total_size + current_size - 1)
+                                ) * (results[group][metric] - metric_score) ** 2
+                            else:
+                                results[group][metric] = metric_score
+                                results[group][stderr] = var_score
+
+                        total_size += current_size
+
+                    for stderr in all_stderr:
+                        results[group][stderr] = np.sqrt(results[group][stderr])
+
+                results[group]["samples"] = total_size
+
+        def print_tasks(task_hierarchy, results, tab=0):
+            results_agg = collections.defaultdict(dict)
+            groups_agg = collections.defaultdict(dict)
+
+            (group_name, task_list), *_ = task_hierarchy.items()
+            task_list = sorted(task_list)
+
+            results_agg[group_name] = results[group_name].copy()
+            # results_agg[group_name]["tab"] = tab
+            if "samples" in results_agg[group_name]:
+                results_agg[group_name].pop("samples")
+
+            tab_string = " " * tab + "- " if tab > 0 else ""
+
+            if "alias" in results_agg[group_name]:
+                results_agg[group_name]["alias"] = (
+                    tab_string + results_agg[group_name]["alias"]
+                )
+            else:
+                results_agg[group_name]["alias"] = tab_string + group_name
+
+            if len(task_list) > 0:
+                groups_agg[group_name] = results[group_name].copy()
+                # groups_agg[group_name]["tab"] = tab
+                if "samples" in groups_agg[group_name]:
+                    groups_agg[group_name].pop("samples")
+
+                if "alias" in groups_agg[group_name]:
+                    groups_agg[group_name]["alias"] = (
+                        tab_string + groups_agg[group_name]["alias"]
+                    )
+                else:
+                    groups_agg[group_name]["alias"] = tab_string + group_name
+
+                for task_name in task_list:
+                    if task_name in task_hierarchy:
+                        _task_hierarchy = {
+                            **{task_name: task_hierarchy[task_name]},
+                            **task_hierarchy,
+                        }
+                    else:
+                        _task_hierarchy = {
+                            **{task_name: []},
+                            **task_hierarchy,
+                        }
+
+                    _results_agg, _groups_agg = print_tasks(
+                        _task_hierarchy, results, tab + 1
+                    )
+                    results_agg = {**results_agg, **_results_agg}
+                    groups_agg = {**groups_agg, **_groups_agg}
+
+            return results_agg, groups_agg
+
+        results_agg = collections.defaultdict(dict)
+        groups_agg = collections.defaultdict(dict)
+        all_tasks_list = list(task_hierarchy.keys())
+        left_tasks_list = []
+        while True:
+            add_tasks_list = list(k for k in results_agg.keys())
+            left_tasks_list = sorted(list(set(all_tasks_list) - set(add_tasks_list)))
+            if len(left_tasks_list) == 0:
+                break
+
+            _task_hierarchy = {
+                k: v for k, v in task_hierarchy.items() if k in left_tasks_list
+            }
+            _results_agg, _groups_agg = print_tasks(_task_hierarchy, results)
+
+            results_agg = {**results_agg, **_results_agg}
+            groups_agg = {**groups_agg, **_groups_agg}
+
+        for group_name, task_list in task_hierarchy.items():
+            if task_list != []:
+                num_fewshot[group_name] = num_fewshot[task_list[0]]
 
         results_dict = {
             "results": dict(results_agg.items()),
             **({"groups": dict(groups_agg.items())} if bool(groups_agg) else {}),
             "configs": dict(sorted(configs.items())),
             "versions": dict(sorted(versions.items())),
+            "n-shot": dict(sorted(num_fewshot.items())),
         }
         if log_samples:
             results_dict["samples"] = dict(samples)

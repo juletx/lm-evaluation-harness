@@ -1,16 +1,17 @@
 import abc
-import os
-
-import torch
-from typing import Union, List, Tuple, Optional, Type, TypeVar
-from sqlitedict import SqliteDict
-import json
 import hashlib
+import json
+import logging
+import os
+from typing import List, Optional, Tuple, Type, TypeVar
 
+from sqlitedict import SqliteDict
 from tqdm import tqdm
 
 from lm_eval import utils
-from lm_eval.logger import eval_logger
+
+
+eval_logger = logging.getLogger("lm-eval")
 
 T = TypeVar("T", bound="LM")
 
@@ -96,7 +97,7 @@ class LM(abc.ABC):
 
     # TODO: Add an optional max length
     @abc.abstractmethod
-    def greedy_until(self, requests) -> List[str]:
+    def generate_until(self, requests) -> List[str]:
         """Generate greedily until a stopping sequence
 
         :param requests: list[Instance]
@@ -130,13 +131,6 @@ class LM(abc.ABC):
         additional_config = {} if additional_config is None else additional_config
         args = utils.simple_parse_args_string(arg_string)
         args2 = {k: v for k, v in additional_config.items() if v is not None}
-        # TODO: delete once float16 MPS is fixed in torch stable
-        if (
-            args2.get("device") in ("mps", "mps:0")
-            or args.get("device") in ("mps", "mps:0")
-            and "dev" not in torch.__version__
-        ):
-            args["dtype"] = "float32"
         return cls(**args, **args2)
 
     @property
@@ -211,12 +205,12 @@ class CachingLM:
             )
             for req in tqdm(requests):
                 hsh = hash_args(attr, req.args)
-                if attr == "greedy_until" and req.args[1].get("do_sample", False):
+                if attr == "generate_until" and req.args[1].get("do_sample", False):
                     # when we are doing non-greedy generation, don't use the cache
                     # (else every "randomly sampled" generation would be identical for repeats > 1).
                     if not warned:
                         eval_logger.warning(
-                            f"Arguments to lm.greedy_until() '{req.args[1]}' include non-deterministic sampling. Caching will not be performed for such requests."
+                            f"Arguments to lm.generate_until() '{req.args[1]}' include non-deterministic sampling. Caching will not be performed for such requests."
                         )
                         warned = True
                     res.append(None)

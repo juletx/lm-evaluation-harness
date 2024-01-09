@@ -1,6 +1,8 @@
 import random
+
 import transformers
-from lm_eval import tasks, evaluator
+
+from lm_eval import evaluator, tasks
 from lm_eval.base import LM
 
 
@@ -23,7 +25,7 @@ class DryrunLM(LM):
 
         return res
 
-    def greedy_until(self, requests):
+    def generate_until(self, requests):
         res = []
 
         for ctx, _ in requests:

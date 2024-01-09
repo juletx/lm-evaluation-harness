@@ -1,4 +1,4 @@
-output_type: greedy_until
+output_type: generate_until
 training_split: train
 validation_split: validation
 fewshot_split: validation
@@ -13,3 +13,5 @@ generation_kwargs:
   do_sample: false
   temperature: 0.0
 repeats: 1
+metadata:
+  version: 0.0

@@ -1,12 +1,16 @@
 import hashlib
 import json
-import openai
 import os
 import pickle
-import pytest
 import unittest.mock as mock
 
+import pytest
+from openai import OpenAI
+
 import lm_eval.models as models
+
+
+client = OpenAI()
 
 
 LOGLIKELIHOOD_TEST_CASES = [
@@ -78,7 +82,7 @@ def test_gpt2():
     # test empty context
     gpt2.loglikelihood([("", "test")])
 
-    (gen,) = gpt2.greedy_until(
+    (gen,) = gpt2.generate_until(
         [("The quick brown fox jumps over the lazy", [".", "\n"])]
     )
 
@@ -172,7 +176,7 @@ def openai_mock_completion(**kwargs):
     if os.path.exists(fname):
         with open(fname, "rb") as fh:
             return pickle.load(fh)
-    ret = openai.Completion.create(**kwargs)
+    ret = client.completions.create(**kwargs)
     ret.api_key = ""
     with open(fname, "wb") as fh:
         pickle.dump(ret, fh)
@@ -204,7 +208,7 @@ def test_gpt3():
     # test empty context
     gpt3.loglikelihood([("", "test")])
 
-    (gen,) = gpt3.greedy_until(
+    (gen,) = gpt3.generate_until(
         [("The quick brown fox jumps over the lazy", [".", "\n"])]
     )
 
@@ -300,7 +304,7 @@ def test_textsynth():
     # test empty context
     textsynth.loglikelihood([("", "test")])
 
-    (gen,) = textsynth.greedy_until(
+    (gen,) = textsynth.generate_until(
         [("The quick brown fox jumps over the lazy", [".", "\n"])]
     )
 

@@ -2,7 +2,9 @@
 
 `lm-evaluation-harness` is a framework that strives to support a wide range of zero- and few-shot evaluation tasks on autoregressive language models (LMs).
 
-This documentation page provides a walkthrough to get started creating your own task, on the `big-refactor` branch of the repository (which will be v0.5.0 in the future.)
+This documentation page provides a walkthrough to get started creating your own task, in `lm-eval` versions v0.4.0 and later.
+
+A more interactive tutorial is available as a Jupyter notebook [here](https://github.com/EleutherAI/lm-evaluation-harness/blob/main/examples/lm-eval-overview.ipynb).
 
 ## Setup
 
@@ -12,12 +14,11 @@ If you haven't already, go ahead and fork the main repo, clone it, create a bran
 # After forking...
 git clone https://github.com/<YOUR-USERNAME>/lm-evaluation-harness.git
 cd lm-evaluation-harness
-git checkout big-refactor
 git checkout -b <task-name>
 pip install -e ".[dev]"
 ```
 
-As a concrete example, we'll walk through reimplementing the `gsm8k` benchmark (a *generative* task which requires sampling text from a model) and the `sciq` benchmark. (a *discriminative*, or *multiple choice*, task where the model picks the most likely of several fixed answer choices).
+In this document, we'll walk through the basics of implementing a static benchmark evaluation in two formats: a *generative* task which requires sampling text from a model, such as [`gsm8k`](https://github.com/EleutherAI/lm-evaluation-harness/blob/main/lm_eval/tasks/gsm8k/gsm8k.yaml), and a *discriminative*, or *multiple choice*, task where the model picks the most likely of several fixed answer choices, such as [`sciq`](https://github.com/EleutherAI/lm-evaluation-harness/blob/main/lm_eval/tasks/sciq/sciq.yaml).
 
 ## Creating a YAML file
 
@@ -44,6 +45,16 @@ dataset_path: ... # the name of the dataset on the HF Hub.
 dataset_name: ... # the dataset configuration to use. Leave `null` if your dataset does not require a config to be passed. See https://huggingface.co/docs/datasets/load_hub#configurations for more info.
 dataset_kwargs: null # any extra keyword arguments that should be passed to the dataset constructor, e.g. `data_dir`.
 ```
+
+------------------------------
+**Tip:** To load a local dataset for evaluation, you can specify data files in the `dataset_kwargs` field, such as the following for JSON files:
+```
+dataset_path: json
+dataset_name: null
+dataset_kwargs:
+  data_files: /path/to/my/json
+```
+-------------------------------
 
 Next, we'd like to tell our task what the dataset's train, validation, and test splits are named, if they exist:
 
@@ -112,11 +123,18 @@ doc_to_target: 3
 doc_to_choice: ['No', 'Yes']
 ```
 
+if a dataset feature is already a list, you can set the name of the feature as `doc_to_choice` (See [Hellaswag](https://github.com/EleutherAI/lm-evaluation-harness/blob/e0eda4d3ffa10e5f65e0976161cd134bec61983a/lm_eval/tasks/hellaswag/hellaswag.yaml#L13))
+```
+doc_to_choice: choices
+```
+
+
+
 ### Writing a prompt with Jinja 2
 
 We support the [Jinja 2](https://jinja.palletsprojects.com/en/3.1.x/) templating language for writing prompts. In practice, this means you can take your dataset's columns and do many basic string manipulations to place each document into prompted format.
 
-Take for example `super_glue/boolq`, as input, we'd like to use the features `passage` and `question` and string them together so that for a a sample line `doc`, the model sees something the format of:
+Take for example the dataset `super_glue/boolq`. As input, we'd like to use the features `passage` and `question` and string them together so that for a a sample line `doc`, the model sees something the format of:
 ```
 doc["passage"]
 Question: doc["question"]?
@@ -263,6 +281,24 @@ to the top of any Python file that is run or imported when performing evaluation
 Passing `--tasks /path/to/yaml/file` is also accepted.
 
 
+## Beautifying Table Display
+
+To avoid conflict, each task needs to be registered with a unique name. Because of this, slight variations of task are still counted as unique tasks and need to be named uniquely. This could be done by appending an additional naming that may refer to the variation such as in MMLU where the template used to evaluated for flan are differentiated from the default by the prefix `mmlu_flan_*`. Printing the full task names can easily clutter the results table at the end of the evaluation especially when you have a long list of tasks or are using a benchmark that comprises of many tasks. To make it more legible, you can use `task_alias` and `group_alias` to provide an alternative task name and group name that will be printed.
+``
+for example in `mmlu_abstract_algebra.yaml` we set `group_alias` to `stem` and `task_alias` to `abstract_algebra`.
+
+```
+"dataset_name": "abstract_algebra"
+"description": "The following are multiple choice questions (with answers) about abstract\
+  \ algebra.\n\n"
+"group": "mmlu_stem"
+"group_alias": "stem"
+"include": "_default_template_yaml"
+"task": "mmlu_abstract_algebra"
+"task_alias": "abstract_algebra"
+```
+Note: Even though `group` can be a list, for now, `group_alias` can only be a single string.
+
 ## Checking validity
 
 After registering your task, you can now check on your data downloading and verify that the few-shot samples look as intended. Run the following command with your desired args:
@@ -279,13 +315,32 @@ python -m scripts.write_out \
 Open the file specified at the `--output_base_path <path>` and ensure it passes
 a simple eye test.
 
+## Versioning
+
+One key feature in LM Evaluation Harness is the ability to version tasks--that is, mark them with a specific version number that can be bumped whenever a breaking change is made.
+
+This version info can be provided by adding the following to your new task config file:
+
+```
+metadata:
+  version: 0
+```
+
+Now, whenever a change needs to be made to your task in the future, please increase the version number by 1 so that users can differentiate the different task iterations and versions.
+
+If you are incrementing a task's version, please also consider adding a changelog to the task's README.md noting the date, PR number, what version you have updated to, and a one-liner describing the change.
+
+for example,
+
+* \[Dec 25, 2023\] (PR #999) Version 0.0 -> 1.0: Fixed a bug with answer extraction that led to underestimated performance.
+
 ## Checking performance + equivalence
 
 It's now time to check models' performance on your task! In the evaluation harness, we intend to support a wide range of evaluation tasks and setups, but prioritize the inclusion of already-proven benchmarks following the precise evaluation setups in the literature where possible.
 
 To enable this, we provide a checklist that should be completed when contributing a new task, to enable accurate book-keeping and to ensure that tasks added to the library are well-tested and, where applicable, precedented.
 
-### Task impl. checklist
+### Task Validity Checklist
 
 The checklist is the following:
 
@@ -304,4 +359,4 @@ It is recommended to include a filled-out copy of this checklist in the README.m
 
 ## Submitting your task
 
-You're all set! Now push your work and make a pull request to the `big-refactor` branch! Thanks for the contribution :). If there are any questions, please leave a message in the `#lm-thunderdome` channel on the EAI discord!
+You're all set! Now push your work and make a pull request to the `main` branch! Thanks for the contribution :). If there are any questions, please leave a message in the `#lm-thunderdome` channel on the EAI discord!

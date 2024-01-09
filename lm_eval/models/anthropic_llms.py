@@ -1,9 +1,14 @@
+from typing import Any, List, Tuple
+
+from tqdm import tqdm
+
+from lm_eval import utils
 from lm_eval.api.model import LM
 from lm_eval.api.registry import register_model
-from tqdm import tqdm
-import time
-from lm_eval.logger import eval_logger
-from typing import List, Any, Tuple
+from lm_eval.utils import retry_on_specific_exceptions
+
+
+eval_logger = utils.eval_logger
 
 
 def anthropic_completion(
@@ -43,26 +48,30 @@ def anthropic_completion(
 please install anthropic via `pip install lm-eval[anthropic]` or `pip install -e .[anthropic]`",
         )
 
-    backoff_time: float = 3
-    while True:
-        try:
-            response = client.completions.create(
-                prompt=f"{anthropic.HUMAN_PROMPT} {prompt}{anthropic.AI_PROMPT}",
-                model=model,
-                # NOTE: Claude really likes to do CoT, and overly aggressive stop sequences
-                #       (e.g. gsm8k's ":") may truncate a lot of the input.
-                stop_sequences=[anthropic.HUMAN_PROMPT] + stop,
-                max_tokens_to_sample=max_tokens_to_sample,
-                temperature=temperature,
-                **kwargs,
-            )
-            return response.completion
-        except anthropic.RateLimitError as e:
-            eval_logger.warning(
-                f"RateLimitError occurred: {e.__cause__}\n Retrying in {backoff_time} seconds"
-            )
-            time.sleep(backoff_time)
-            backoff_time *= 1.5
+    def _exception_callback(e: Exception, sleep_time: float) -> None:
+        eval_logger.warning(
+            f"RateLimitError occurred: {e.__cause__}\n Retrying in {sleep_time} seconds"
+        )
+
+    @retry_on_specific_exceptions(
+        on_exceptions=[anthropic.RateLimitError],
+        max_retries=None,  # retry forever, consider changing
+        on_exception_callback=_exception_callback,
+    )
+    def completion():
+        response = client.completions.create(
+            prompt=f"{anthropic.HUMAN_PROMPT} {prompt}{anthropic.AI_PROMPT}",
+            model=model,
+            # NOTE: Claude really likes to do CoT, and overly aggressive stop sequences
+            #       (e.g. gsm8k's ":") may truncate a lot of the input.
+            stop_sequences=[anthropic.HUMAN_PROMPT] + stop,
+            max_tokens_to_sample=max_tokens_to_sample,
+            temperature=temperature,
+            **kwargs,
+        )
+        return response.completion
+
+    return completion()
 
 
 @register_model("anthropic")
@@ -138,7 +147,15 @@ please install anthropic via `pip install lm-eval[anthropic]` or `pip install -e
     def _loglikelihood_tokens(self, requests, disable_tqdm: bool = False):
         raise NotImplementedError("No support for logits.")
 
-    def greedy_until(self, requests) -> List[str]:
+    def generate_until(self, requests) -> List[str]:
+        try:
+            import anthropic
+        except ModuleNotFoundError:
+            raise Exception(
+                "attempted to use 'anthropic' LM type, but package `anthropic` is not installed. \
+please install anthropic via `pip install lm-eval[anthropic]` or `pip install -e .[anthropic]`",
+            )
+
         if not requests:
             return []
 
@@ -164,7 +181,7 @@ please install anthropic via `pip install lm-eval[anthropic]` or `pip install -e
                 )
                 res.append(response)
 
-                self.cache_hook.add_partial("greedy_until", request, response)
+                self.cache_hook.add_partial("generate_until", request, response)
             except anthropic.APIConnectionError as e:  # type: ignore # noqa: F821
                 eval_logger.critical(f"Server unreachable: {e.__cause__}")
                 break
@@ -179,7 +196,7 @@ please install anthropic via `pip install lm-eval[anthropic]` or `pip install -e
         raise NotImplementedError()
 
     def _model_generate(self, context, max_length, eos_token_id):
-        # Isn't used because we override greedy_until
+        # Isn't used because we override generate_until
         raise NotImplementedError()
 
     def loglikelihood(self, requests):

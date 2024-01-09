@@ -1,9 +1,7 @@
 import argparse
-from typing import Dict, List
 
 import yaml
 
-import sacrebleu
 
 try:
     import pycountry
@@ -58,7 +56,7 @@ def gen_lang_yamls(output_dir: str, overwrite: bool) -> None:
                 try:
                     source, target = code_to_language(src), code_to_language(tgt)
 
-                    groups = ["greedy_until", "translation", lang]
+                    groups = ["generate_until", "translation", lang]
                     if lang in gpt3_translation_benchmarks.keys():
                         groups += ["gpt3_translation_benchmarks"]
 

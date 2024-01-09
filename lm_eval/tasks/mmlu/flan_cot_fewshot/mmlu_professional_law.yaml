@@ -1,5 +1,5 @@
-dataset_name: professional_law
-description: "The following are multiple choice questions (with answers) about professional\
+"dataset_name": "professional_law"
+"description": "The following are multiple choice questions (with answers) about professional\
   \ law.\n\nQ: A son owed a creditor $5,000. The son's father contacted the creditor\
   \ and told him that he wanted to pay the son's debt. The father signed a document\
   \ that stated the father would pay the son's debt at a rate of $500 a month for\
@@ -100,6 +100,7 @@ description: "The following are multiple choice questions (with answers) about p
   \ think step by step. We refer to Wikipedia articles on law for help. The Fourteenth\
   \ Amendment further supports the First Amendment by establishing a due process clause.\
   \ Hence the strongest argument should be the statute is overbroad and consequently\
-  \ invalid under the First and Fourteenth Amendments. The answer is (D)."
-include: _mmlu_flan_cot_fewshot_template_yaml
-task: mmlu_flan_cot_fewshot_professional_law
+  \ invalid under the First and Fourteenth Amendments. The answer is (D).\n\n"
+"group": "mmlu_flan_cot_fewshot_humanities"
+"include": "_mmlu_flan_cot_fewshot_template_yaml"
+"task": "mmlu_flan_cot_fewshot_professional_law"

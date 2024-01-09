@@ -13,11 +13,13 @@ Homepage: https://textsynth.com/index.html
 """
 import logging
 import os
+
 import requests as _requests
-import time
 from tqdm import tqdm
+
 from lm_eval.api.model import LM
 from lm_eval.api.registry import register_model
+from lm_eval.utils import retry_on_specific_exceptions
 
 
 logger = logging.getLogger(__name__)
@@ -27,21 +29,26 @@ def textsynth_completion(**kwargs):
     """Query TextSynth API for completion.
     Retry with back-off until they respond.
     """
-    backoff_time = 3
-    while True:
-        try:
-            return _requests.post(**kwargs)
-        except _requests.exceptions.RequestException:
-            import traceback
 
-            traceback.print_exc()
-            time.sleep(backoff_time)
-            backoff_time *= 1.5
+    def _exception_callback(e: Exception, sleep_time: float) -> None:
+        import traceback
+
+        traceback.print_exc()
+
+    @retry_on_specific_exceptions(
+        on_exceptions=[_requests.exceptions.RequestException],
+        max_retries=None,  # retry forever, consider changing
+        on_exception_callback=_exception_callback,
+    )
+    def completion():
+        return _requests.post(**kwargs)
+
+    return completion()
 
 
 @register_model("textsynth")
 class TextSynthLM(LM):
-    def __init__(self, engine, truncate: bool = False) -> None:
+    def __init__(self, engine, truncate: bool = False, **kwargs) -> None:
         """
         :param engine: str
             TextSynth API engine (e.g. `gptj_6B`)
@@ -58,7 +65,7 @@ class TextSynthLM(LM):
 
     @property
     def eot_token_id(self):
-        # Isn't used because we override loglikelihood, loglikelihood_rolling and greedy_until
+        # Isn't used because we override loglikelihood, loglikelihood_rolling and generate_until
         raise NotImplementedError()
 
     @property
@@ -72,20 +79,20 @@ class TextSynthLM(LM):
 
     @property
     def batch_size(self):
-        # Isn't used because we override loglikelihood, loglikelihood_rolling and greedy_until
+        # Isn't used because we override loglikelihood, loglikelihood_rolling and generate_until
         raise NotImplementedError()
 
     @property
     def device(self):
-        # Isn't used because we override loglikelihood, loglikelihood_rolling and greedy_until
+        # Isn't used because we override loglikelihood, loglikelihood_rolling and generate_until
         raise NotImplementedError()
 
     def tok_encode(self, string: str):
-        # Isn't used because we override loglikelihood, loglikelihood_rolling and greedy_until
+        # Isn't used because we override loglikelihood, loglikelihood_rolling and generate_until
         raise NotImplementedError()
 
     def tok_decode(self, tokens):
-        # Isn't used because we override loglikelihood, loglikelihood_rolling and greedy_until
+        # Isn't used because we override loglikelihood, loglikelihood_rolling and generate_until
         raise NotImplementedError()
 
     def loglikelihood(self, requests):
@@ -122,7 +129,7 @@ class TextSynthLM(LM):
             "input tokenization support from TextSynth."
         )
 
-    def greedy_until(self, requests):
+    def generate_until(self, requests):
         if not requests:
             return []
 
@@ -146,10 +153,10 @@ class TextSynthLM(LM):
                 s = resp["text"]
                 res.append(s)
 
-                self.cache_hook.add_partial("greedy_until", (inp, request_args), s)
+                self.cache_hook.add_partial("generate_until", (inp, request_args), s)
             else:
                 logger.error(
-                    f"The following response does not contain generated `text`. "
+                    "The following response does not contain generated `text`. "
                     "Got:\n{resp}"
                 )
                 assert False
@@ -160,5 +167,5 @@ class TextSynthLM(LM):
         raise NotImplementedError()
 
     def _model_generate(self, context, max_length, eos_token_id):
-        # Isn't used because we override greedy_until
+        # Isn't used because we override generate_until
         raise NotImplementedError()

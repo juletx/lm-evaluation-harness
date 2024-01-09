@@ -3,7 +3,7 @@ import ast
 
 from typing import Dict
 from lm_eval import utils
-from lm_eval.logger import eval_logger
+from lm_eval.utils import eval_logger
 
 # Prompt library.
 # Stores prompts in a dictionary indexed by 2 levels:
@@ -69,7 +69,6 @@ def get_prompt(prompt_id: str, dataset_name: str = None, subset_name: str = None
 def load_prompt_list(
     use_prompt: str, dataset_name=None, subset_name=None, yaml_path=None, **kwargs
 ):
-
     category_name, prompt_name = use_prompt.split(":")
 
     if category_name == "promptsource":
@@ -113,7 +112,6 @@ class PromptString:
         self.prompt_string = prompt_string
 
     def apply(self, doc):
-
         doc_to_text = self.prompt_string["doc_to_text"]
         doc_to_target = self.prompt_string["doc_to_target"]
 

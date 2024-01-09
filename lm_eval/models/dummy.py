@@ -1,4 +1,5 @@
 import random
+
 from lm_eval.api.model import LM
 from lm_eval.api.registry import register_model
 
@@ -20,7 +21,7 @@ class DummyLM(LM):
 
         return res
 
-    def greedy_until(self, requests):
+    def generate_until(self, requests):
         res = []
 
         for ctx, _ in requests:

@@ -1,28 +1,49 @@
 import argparse
-import numpy as np
-import json
 import os
 import random
+
+import numpy as np
+
 from lm_eval import tasks
-from lm_eval.utils import join_iters
+from lm_eval.tasks import include_path, initialize_tasks
+from lm_eval.utils import eval_logger, join_iters
+
 
 EXAMPLE_DIVIDER = "!!@@##@@!! -- Example {i}\n"
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output_base_path", required=True)
+    parser.add_argument("--output_base_path", "--output_path", required=True)
     parser.add_argument("--tasks", default="all_tasks")
     parser.add_argument("--sets", type=str, default="val")  # example: val,test
     parser.add_argument("--num_fewshot", type=int, default=1)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--num_examples", type=int, default=1)
+    parser.add_argument(
+        "--include_path",
+        type=str,
+        default=None,
+        help="Additional path to include if there are external tasks to include.",
+    )
+    parser.add_argument(
+        "--verbosity",
+        type=str,
+        default="INFO",
+        help="Log error when tasks are not registered.",
+    )
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
     np.random.seed(args.seed)
+
+    initialize_tasks(args.verbosity)
+
+    if args.include_path is not None:
+        eval_logger.info(f"Including path: {args.include_path}")
+        include_path(args.include_path)
 
     if args.tasks == "all_tasks":
         task_names = tasks.ALL_TASKS
@@ -32,6 +53,8 @@ def main():
 
     os.makedirs(args.output_base_path, exist_ok=True)
     for task_name, task in task_dict.items():
+        if type(task) == tuple:
+            group_name, task = task
         rnd = random.Random()
         rnd.seed(args.seed)
 

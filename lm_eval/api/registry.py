@@ -1,7 +1,11 @@
-import os
+import logging
+
 import evaluate
+
 from lm_eval.api.model import LM
-from lm_eval.logger import eval_logger
+
+
+eval_logger = logging.getLogger("lm-eval")
 
 MODEL_REGISTRY = {}
 
@@ -68,10 +72,10 @@ def register_group(name):
     return decorate
 
 
-AGGREGATION_REGISTRY = {}
-DEFAULT_AGGREGATION_REGISTRY = {}
-METRIC_REGISTRY = {}
 OUTPUT_TYPE_REGISTRY = {}
+METRIC_REGISTRY = {}
+METRIC_AGGREGATION_REGISTRY = {}
+AGGREGATION_REGISTRY = {}
 HIGHER_IS_BETTER_REGISTRY = {}
 
 DEFAULT_METRIC_REGISTRY = {
@@ -81,24 +85,21 @@ DEFAULT_METRIC_REGISTRY = {
     ],
     "loglikelihood_rolling": ["word_perplexity", "byte_perplexity", "bits_per_byte"],
     "multiple_choice": ["acc", "acc_norm"],
-    "greedy_until": ["exact_match"],
+    "generate_until": ["exact_match"],
 }
 
 
 def register_metric(**args):
     # TODO: do we want to enforce a certain interface to registered metrics?
     def decorate(fn):
-
         assert "metric" in args
         name = args["metric"]
 
         for key, registry in [
             ("metric", METRIC_REGISTRY),
             ("higher_is_better", HIGHER_IS_BETTER_REGISTRY),
-            # ("output_type", OUTPUT_TYPE_REGISTRY),
-            ("aggregation", DEFAULT_AGGREGATION_REGISTRY),
+            ("aggregation", METRIC_AGGREGATION_REGISTRY),
         ]:
-
             if key in args:
                 value = args[key]
                 assert (
@@ -118,7 +119,6 @@ def register_metric(**args):
 
 
 def get_metric(name, hf_evaluate_metric=False):
-
     if not hf_evaluate_metric:
         if name in METRIC_REGISTRY:
             return METRIC_REGISTRY[name]
@@ -149,7 +149,6 @@ def register_aggregation(name):
 
 
 def get_aggregation(name):
-
     try:
         return AGGREGATION_REGISTRY[name]
     except KeyError:
@@ -158,12 +157,12 @@ def get_aggregation(name):
         )
 
 
-def get_default_aggregation(metric_name):
+def get_metric_aggregation(name):
     try:
-        return DEFAULT_AGGREGATION_REGISTRY[metric_name]
+        return METRIC_AGGREGATION_REGISTRY[name]
     except KeyError:
         eval_logger.warning(
-            f"No default aggregation metric for metric '{metric_name}'!"
+            "{} metric is not assigned a default aggregation!".format(name),
         )
 
 
@@ -171,7 +170,6 @@ def is_higher_better(metric_name):
     try:
         return HIGHER_IS_BETTER_REGISTRY[metric_name]
     except KeyError:
-        raise Warning(f"higher_is_better not specified for metric '{metric_name}'!")
         eval_logger.warning(
             f"higher_is_better not specified for metric '{metric_name}'!"
         )
