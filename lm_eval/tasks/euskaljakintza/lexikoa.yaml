@@ -1,5 +1,5 @@
 include: euskaljakintza
-dataset_name: irakurmena
-task: euskaljakintza_irakurmena
+dataset_name: lexikoa
+task: euskaljakintza_lexikoa
 doc_to_text: !function utils.doc_to_text_context
 doc_to_choice: !function utils.doc_to_choice

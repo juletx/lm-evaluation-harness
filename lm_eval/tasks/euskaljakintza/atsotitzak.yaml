@@ -1,0 +1,5 @@
+include: euskaljakintza
+dataset_name: atsotitzak
+task: euskaljakintza_atsotitzak
+doc_to_text: !function utils.doc_to_text
+doc_to_choice: !function utils.doc_to_choice
