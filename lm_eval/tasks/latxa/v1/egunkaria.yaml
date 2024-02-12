@@ -1,0 +1,3 @@
+include: _latxa_v1_yaml
+task: latxa-egunkaria-bpb
+dataset_name: egunkaria

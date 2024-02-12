@@ -1,0 +1,3 @@
+include: _latxa_v1_yaml
+task: latxa-euscrawl-bpb
+dataset_name: euscrawl

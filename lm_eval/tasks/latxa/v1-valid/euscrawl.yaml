@@ -1,0 +1,5 @@
+include: _latxa_v1_yaml
+task: latxa-euscrawl-bpb-valid
+dataset_kwargs:
+  data_files:
+    test: /proiektuak/ilenia/corpora/eu/ilenia/v1/jsonl/LATXA-v1.1-VALID/euscrawl.valid.jsonl
