@@ -1,0 +1,19 @@
+task: eutrivia_mt
+dataset_path: HiTZ/eutrivia
+dataset_name: null
+validation_split: null
+test_split: translatetest
+fewshot_split: translatetest
+output_type: multiple_choice
+doc_to_text: "Question: {{question}}\nA: {{candidates[0]}}\nB: {{candidates[1]}}\nC: {{candidates[2]}}\nAnswer:"
+doc_to_choice: ["A", "B", "C"]
+doc_to_target: answer
+metric_list:
+  - metric: acc
+    aggregation: mean
+    higher_is_better: true
+  - metric: acc_norm
+    aggregation: mean
+    higher_is_better: true
+metadata:
+  version: 0.0
