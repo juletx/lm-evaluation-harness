@@ -1,3 +1,3 @@
 include: _latxa_v1_yaml
 task: latxa-hplt-bpb
-dataset_name: hplt
+dataset_name: hplt-v1
