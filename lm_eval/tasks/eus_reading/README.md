@@ -1,4 +1,4 @@
-# EusExams
+# EusReading
 
 ### Paper
 
@@ -6,7 +6,7 @@ Title: Latxa: An Open Language Model and Evaluation Suite for Basque
 
 Abstract: `link to paper PDF or arXiv abstract goes here`
 
-EusExams is a collection of tests designed to prepare individuals for Public Service examinations conducted by several Basque institutions, including the public health system Osakidetza, the Basque Government, the City Councils of Bilbao and Gasteiz, and the University of the Basque Country (UPV/EHU). Within each of these groups, there are different exams for public positions, such as administrative and assistant roles. Each multiple-choice question contains 2 to 4 choices (3.90 on average) and one correct answer. The dataset is mostly parallel with 16k questions in Basque and 18k in Spanish.
+EusReading consists of 352 reading comprehension exercises (irakurmena) sourced from the set of past EGA exams from 1998 to 2008. Each test generally has 10 multiple-choice questions, with 4 choices and a single correct answer. These exercises are more challenging than Belebele due to the complexity and length of the input texts. As a result, EusReading is useful to measure long context understanding of models.
 
 Homepage: https://github.com/hitz-zentroa/latxa
 
@@ -28,12 +28,11 @@ Homepage: https://github.com/hitz-zentroa/latxa
 
 #### Groups
 
-* `eus_exams_eu`: The Basque version of the exams.
-* `eus_exams_es`: The Spanish version of the exams.
+There are no groups.
 
 #### Tasks
 
-Basque and Spanish versions of the exams are available as separate tasks starting with `eus_exams_eu` and `eus_exams_es` respectively.
+* `eus_reading`: EusReading consists of 352 reading comprehension exercises (irakurmena) sourced from the set of past EGA exams from 1998 to 2008.
 
 ### Checklist
 
