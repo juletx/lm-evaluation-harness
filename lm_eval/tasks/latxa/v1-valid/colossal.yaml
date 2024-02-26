@@ -1,5 +1,0 @@
-include: _latxa_v1_yaml
-task: latxa-colossal-bpb-valid
-dataset_kwargs:
-  data_files:
-    test: /proiektuak/ilenia/corpora/eu/ilenia/v1/jsonl/LATXA-v1.1-VALID/colossal-oscar.valid.jsonl

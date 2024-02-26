@@ -1,4 +1,3 @@
 include: _latxa_v1_yaml
 task: latxa-booktegi-bpb
 dataset_name: booktegi
-
