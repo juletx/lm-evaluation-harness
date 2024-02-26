@@ -1,5 +1,0 @@
-task: auskalo_mt
-include: auskalo.yaml
-dataset_path: HiTZ/auskalo
-test_split: translatetest
-fewshot_split: translatetest

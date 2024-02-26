@@ -1,5 +1,0 @@
-include: atalak
-dataset_name: atarikoa
-task: atalak_atarikoa
-doc_to_text: "Galdera: {{question}}\nA: {{candidates[0]}}\nB: {{candidates[1]}}\nC: {{candidates[2]}}\nD: {{candidates[3]}}\nErantzuna:"
-doc_to_choice: ["A", "B", "C", "D"]
