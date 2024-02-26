@@ -1,7 +1,7 @@
 include: xnli_common_yaml
 task: xnli_eu
 dataset_path: HiTZ/xnli-eu
-dataset_name: null
+dataset_name: eu
 training_split: null
 test_split: test
 doc_to_choice: '{{[sentence1+", ezta? Bai, "+sentence2,sentence1+", ezta? Gainera,

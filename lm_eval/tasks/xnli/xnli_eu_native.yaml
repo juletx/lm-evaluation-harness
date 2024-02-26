@@ -2,4 +2,4 @@ include: xnli_eu.yaml
 group: xnli_eu_mt_native
 task: xnli_eu_native
 validation_split: null
-dataset_path: HiTZ/xnli-eu_native
+dataset_name: eu_native
