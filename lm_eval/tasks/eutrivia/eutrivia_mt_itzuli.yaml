@@ -1,4 +1,0 @@
-task: eutrivia_mt_itzuli
-include: eutrivia_mt.yaml
-test_split: translatetestitzuli
-fewshot_split: translatetestitzuli

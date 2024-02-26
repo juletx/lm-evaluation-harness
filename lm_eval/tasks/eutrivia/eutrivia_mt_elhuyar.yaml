@@ -1,4 +1,0 @@
-task: eutrivia_mt_elhuyar
-include: eutrivia_mt.yaml
-test_split: translatetestelhuyar
-fewshot_split: translatetestelhuyar
