@@ -28,7 +28,10 @@ BibTeX-formatted citation goes here
 
 - `basquetrivia_eu`: Trivia questions in Basque.
 - `basquetrivia_en`: Trivia questions in English, human-translated from Basque.
-- `basquetrivia_en_mt`: Trivia questions in English, machine-translated from Basque.
+- `basquetrivia_en_mt_hitz`: Trivia questions in English, machine-translated from Basque with HiTZ.
+- `basquetrivia_en_mt_itzuli`: Trivia questions in English, machine-translated from Basque with Itzuli.
+- `basquetrivia_en_mt_madlad`: Trivia questions in English, machine-translated from Basque with MADLAD.
+- `basquetrivia_en_mt_nllb`: Trivia questions in English, machine-translated from Basque with NLLB.
 
 ### Checklist
 
