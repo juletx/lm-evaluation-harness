@@ -2,14 +2,16 @@ import copy
 import os
 from collections import defaultdict
 from importlib.util import find_spec
-from typing import List, Optional, Tuple
+from typing import List, Literal, Optional, Tuple
 
 from tqdm import tqdm
 
+import lm_eval.models.utils
 from lm_eval import utils
-from lm_eval.api.model import LM
+from lm_eval.api.model import LM, TemplateLM
 from lm_eval.api.registry import register_model
-from lm_eval.utils import retry_on_specific_exceptions
+from lm_eval.models.utils import retry_on_specific_exceptions
+from lm_eval.utils import eval_logger
 
 
 def get_result(response, ctxlen: int) -> Tuple[float, bool]:
@@ -40,7 +42,7 @@ def get_result(response, ctxlen: int) -> Tuple[float, bool]:
     return continuation_logprobs, is_greedy
 
 
-def oa_completion(**kwargs):
+def oa_completion(client, chat: bool = False, **kwargs):
     """Query OpenAI API for completion.
 
     Retry with back-off until they respond
@@ -64,19 +66,24 @@ def oa_completion(**kwargs):
         on_exception_callback=_exception_callback,
     )
     def completion():
-        return openai.completions.create(**kwargs)
+        if chat:
+            return client.chat.completions.create(**kwargs)
+        else:
+            return client.completions.create(**kwargs)
 
     return completion()
 
 
-@register_model("openai-completions")
-class OpenaiCompletionsLM(LM):
-    REQ_CHUNK_SIZE = 20
+@register_model("openai-completions", "local-completions")
+class OpenaiCompletionsLM(TemplateLM):
     _DEFAULT_MAX_LENGTH = 2048
 
     def __init__(
         self,
         model: str,
+        base_url: str = None,
+        tokenizer: Optional[str] = None,
+        tokenizer_backend: Literal["tiktoken", "huggingface"] = "tiktoken",
         truncate: bool = False,
         max_gen_toks: int = 256,
         batch_size: int = 1,
@@ -101,15 +108,44 @@ class OpenaiCompletionsLM(LM):
     please install these via `pip install lm-eval[openai]` or `pip install -e .[openai]`",
             )
         self.model = model
-        self.tokenizer = tiktoken.encoding_for_model(self.model)
-        self.vocab_size = self.tokenizer.n_vocab
+        self.base_url = base_url
+        self.tokenizer_backend = tokenizer_backend
         self.truncate = truncate
-        self.end_of_text_token_id = self.tokenizer.eot_token
+        self._batch_size = batch_size
         self._max_gen_toks = max_gen_toks
         self._max_length = max_length
 
+        # if we have a local model, use HF tokenizer over tiktoken
+        if self.tokenizer_backend == "huggingface":
+            import transformers  # noqa: E401
+
+            self.tokenizer = transformers.AutoTokenizer.from_pretrained(
+                tokenizer if tokenizer else self.model
+            )
+            self.vocab_size = self.tokenizer.vocab
+            self.end_of_text_token_id = self.tokenizer.eos_token
+        elif self.tokenizer_backend == "tiktoken":
+            if self.base_url:
+                eval_logger.warning(
+                    f"Passed `base_url={self.base_url}` but using Tiktoken tokenizer backend. "
+                    "Pass `tokenizer_backend=huggingface` and provide the HF tokenizer name if your model does not use Tiktoken."
+                )
+
+            self.tokenizer = tiktoken.encoding_for_model(self.model)
+            self.vocab_size = self.tokenizer.n_vocab
+            self.end_of_text_token_id = self.tokenizer.eot_token
+        else:
+            raise ValueError(
+                f"Expected tokenizer_backend to be one of ['tiktoken', 'huggingface'] but got {self.tokenizer_backend}"
+            )
+
         # Read from environment variable OPENAI_API_KEY
+        # Set to EMPTY for local
         openai.api_key = os.environ["OPENAI_API_KEY"]
+        if self.base_url:
+            self.client = openai.OpenAI(base_url=self.base_url)
+        else:
+            self.client = openai.OpenAI()
 
     @property
     def eot_token_id(self):
@@ -127,49 +163,19 @@ class OpenaiCompletionsLM(LM):
         return self._max_gen_toks
 
     @property
-    def batch_size(self):
-        # Isn't used because we override _loglikelihood_tokens
-        raise NotImplementedError()
+    def batch_size(self) -> int:
+        return self._batch_size
 
     @property
     def device(self):
         # Isn't used because we override _loglikelihood_tokens
         raise NotImplementedError()
 
-    def tok_encode(self, string: str) -> List[int]:
+    def tok_encode(self, string: str, **kwargs) -> List[int]:
         return self.tokenizer.encode(string)
 
     def tok_decode(self, tokens: List[int]) -> str:
         return self.tokenizer.decode(tokens)
-
-    def _encode_pair(
-        self, context: str, continuation: str
-    ) -> Tuple[List[int], List[int]]:
-        n_spaces = len(context) - len(context.rstrip())
-        if n_spaces > 0:
-            continuation = context[-n_spaces:] + continuation
-            context = context[:-n_spaces]
-        whole_enc = self.tok_encode(context + continuation)
-        context_enc = self.tok_encode(context)
-        context_enc_len = len(context_enc)
-        continuation_enc = whole_enc[context_enc_len:]
-        return context_enc, continuation_enc
-
-    def loglikelihood(self, requests) -> List[Tuple[float, bool]]:
-        new_reqs = []
-        for context, continuation in [req.args for req in requests]:
-            if context == "":
-                # end of text as context
-                context_enc, continuation_enc = (
-                    [self.eot_token_id],
-                    self.tok_encode(continuation),
-                )
-            else:
-                context_enc, continuation_enc = self._encode_pair(context, continuation)
-
-            new_reqs.append(((context, continuation), context_enc, continuation_enc))
-
-        return self._loglikelihood_tokens(new_reqs)
 
     def _loglikelihood_tokens(
         self, requests, disable_tqdm: bool = False
@@ -186,7 +192,7 @@ class OpenaiCompletionsLM(LM):
         re_ord = utils.Reorderer(requests, _collate)
 
         for chunk in tqdm(
-            list(utils.chunks(re_ord.get_reordered(), self.REQ_CHUNK_SIZE)),
+            list(lm_eval.models.utils.chunks(re_ord.get_reordered(), self.batch_size)),
             disable=disable_tqdm,
         ):
             inps = []
@@ -203,6 +209,7 @@ class OpenaiCompletionsLM(LM):
                 ctxlens.append(ctxlen)
 
             response = oa_completion(
+                client=self.client,
                 model=self.model,
                 prompt=inps,
                 echo=True,
@@ -251,26 +258,30 @@ class OpenaiCompletionsLM(LM):
 
         # todo: more intelligent batching for heterogeneous `until`
         for chunk, request_args in tqdm(
-            list(sameuntil_chunks(re_ord.get_reordered(), self.REQ_CHUNK_SIZE))
+            list(sameuntil_chunks(re_ord.get_reordered(), self.batch_size))
         ):
             inps = []
-            self._max_gen_toks = request_args.pop("max_gen_toks", self.max_gen_toks)
+            self._max_gen_toks = request_args.get("max_gen_toks", self.max_gen_toks)
             for context, _ in chunk:
                 context_enc = self.tok_encode(context)
                 inp = context_enc[-(self.max_length - self.max_gen_toks) :]
                 inps.append(inp)
 
-            until = request_args.pop("until", ["<|endoftext|>"])
-            request_args.pop("do_sample", None)
+            until = request_args.get("until", ["<|endoftext|>"])
             request_args["temperature"] = request_args.get("temperature", 0)
 
             response = oa_completion(
+                client=self.client,
                 model=self.model,
                 prompt=inps,
                 max_tokens=self.max_gen_toks,
                 stop=until,
                 seed=self.seed,
-                **request_args,
+                **{
+                    k: v
+                    for k, v in request_args.items()
+                    if k not in ["do_sample", "max_gen_toks"]
+                },
             )
             for resp, (context, args_) in zip(response.choices, chunk):
                 s = getattr(resp, "text")
@@ -327,35 +338,6 @@ class OpenaiCompletionsLM(LM):
             string_nll = sum(string_nll)
             loglikelihoods.append(string_nll)
         return loglikelihoods
-
-
-def oa_chat_completion(client, **kwargs):
-    """Query OpenAI API for chat completion.
-
-    Retry with back-off until they respond
-    """
-    if not find_spec("openai") or not find_spec("tiktoken"):
-        raise Exception(
-            "attempted to use 'openai' LM type, but package `openai` or `tiktoken` are not installed. "
-            "Please install these via `pip install lm-eval[openai]` or `pip install -e .[openai]`"
-        )
-    else:
-        import openai
-
-    def _exception_callback(e: Exception, sleep_time: float) -> None:
-        import traceback
-
-        traceback.print_exc()
-
-    @retry_on_specific_exceptions(
-        on_exceptions=[openai.OpenAIError],
-        max_retries=None,  # retry forever, consider changing
-        on_exception_callback=_exception_callback,
-    )
-    def completion():
-        return client.chat.completions.create(**kwargs)
-
-    return completion()
 
 
 @register_model("openai-chat-completions", "local-chat-completions")
@@ -423,7 +405,7 @@ class OpenaiChatCompletionsLM(LM):
         # we group requests by their generation_kwargs,
         # so that we don't try to execute e.g. greedy sampling and temp=0.8 sampling
         # in the same batch.
-        grouper = utils.Grouper(requests, lambda x: str(x.args[1]))
+        grouper = lm_eval.models.utils.Grouper(requests, lambda x: str(x.args[1]))
         for key, reqs in grouper.get_grouped().items():
             # within each set of reqs for given kwargs, we reorder by token length, descending.
             re_ords[key] = utils.Reorderer(
@@ -435,7 +417,7 @@ class OpenaiChatCompletionsLM(LM):
             # n needs to be 1 because messages in
             # chat completion are not batch but
             # is regarded as a single conversation.
-            chunks = utils.chunks(re_ord.get_reordered(), n=1)
+            chunks = lm_eval.models.utils.chunks(re_ord.get_reordered(), n=1)
             for chunk in chunks:
                 contexts, all_gen_kwargs = zip(*chunk)
                 inps = [{"role": "user", "content": context} for context in contexts]
@@ -460,8 +442,12 @@ class OpenaiChatCompletionsLM(LM):
                         f"Expected repr(kwargs) to be of type repr(dict) but got {kwargs}"
                     )
 
-                response = oa_chat_completion(
-                    client=self.client, messages=inps, model=self.model, **kwargs
+                response = oa_completion(
+                    client=self.client,
+                    chat=True,
+                    messages=inps,
+                    model=self.model,
+                    **kwargs,
                 )
 
                 for resp, (context, args_) in zip(response.choices, chunk):
