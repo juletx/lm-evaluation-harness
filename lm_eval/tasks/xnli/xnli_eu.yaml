@@ -4,7 +4,7 @@ dataset_path: HiTZ/xnli-eu
 dataset_name: eu
 training_split: null
 test_split: test
-doc_to_choice: '{{[sentence1+", ezta? Bai, "+sentence2,sentence1+", ezta? Gainera,
-"+sentence2,sentence1+", ezta? Ez, "+sentence2]}}'
+doc_to_choice: '{{[premise+", ezta? Bai, "+hypothesis,premise+", ezta? Gainera,
+"+hypothesis,premise+", ezta? Ez, "+hypothesis]}}'
 doc_to_text: ""
-doc_to_target: '{{["entailment", "neutral", "contradiction"].index(gold_label)}}'
+doc_to_target: '{{["entailment", "neutral", "contradiction"].index(label)}}'
