@@ -4,7 +4,7 @@
 
 Title: Latxa: An Open Language Model and Evaluation Suite for Basque
 
-Abstract: `link to paper PDF or arXiv abstract goes here`
+Abstract: https://arxiv.org/abs/2403.20266
 
 EusProficiency comprises 5,169 exercises on different topics from past EGA exams, the official C1-level certificate of proficiency in Basque. We collected the atarikoa exercises from EGA exams through the years 1998 to 2008. Atarikoa is the first qualifying test of EGA, which measures different aspects of language competency, such as reading comprehension, grammar, vocabulary, spelling, and writing. Each test generally has 85 multiple-choice questions, with 4 choices and a single correct answer.
 
@@ -15,10 +15,10 @@ Homepage: https://github.com/hitz-zentroa/latxa
 
 ```
 @misc{etxaniz2024latxa,
-      title={{L}atxa: An Open Language Model and Evaluation Suite for {B}asque},
+      title={Latxa: An Open Language Model and Evaluation Suite for Basque},
       author={Julen Etxaniz and Oscar Sainz and Naiara Perez and Itziar Aldabe and German Rigau and Eneko Agirre and Aitor Ormazabal and Mikel Artetxe and Aitor Soroa},
       year={2024},
-      eprint={},
+      eprint={2403.20266},
       archivePrefix={arXiv},
       primaryClass={cs.CL}
 }

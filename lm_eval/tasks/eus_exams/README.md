@@ -4,7 +4,7 @@
 
 Title: Latxa: An Open Language Model and Evaluation Suite for Basque
 
-Abstract: `link to paper PDF or arXiv abstract goes here`
+Abstract: https://arxiv.org/abs/2403.20266
 
 EusExams is a collection of tests designed to prepare individuals for Public Service examinations conducted by several Basque institutions, including the public health system Osakidetza, the Basque Government, the City Councils of Bilbao and Gasteiz, and the University of the Basque Country (UPV/EHU). Within each of these groups, there are different exams for public positions, such as administrative and assistant roles. Each multiple-choice question contains 2 to 4 choices (3.90 on average) and one correct answer. The dataset is mostly parallel with 16k questions in Basque and 18k in Spanish.
 
@@ -15,10 +15,10 @@ Homepage: https://github.com/hitz-zentroa/latxa
 
 ```
 @misc{etxaniz2024latxa,
-      title={{L}atxa: An Open Language Model and Evaluation Suite for {B}asque},
+      title={Latxa: An Open Language Model and Evaluation Suite for Basque},
       author={Julen Etxaniz and Oscar Sainz and Naiara Perez and Itziar Aldabe and German Rigau and Eneko Agirre and Aitor Ormazabal and Mikel Artetxe and Aitor Soroa},
       year={2024},
-      eprint={},
+      eprint={2403.20266},
       archivePrefix={arXiv},
       primaryClass={cs.CL}
 }

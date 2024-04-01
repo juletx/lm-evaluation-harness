@@ -10,6 +10,13 @@ Natural Language Understanding (NLU) technology has improved significantly over 
 
 Homepage: `https://github.com/orai-nlp/BasqueGLUE`
 
+Title: `Latxa: An Open Language Model and Evaluation Suite for Basque`
+
+Abstract: `https://arxiv.org/abs/2403.20266`
+
+The use of BasqueGLUE for evaluating the performance of decoder models in Basque is presented in this paper.
+
+Homepage: `https://github.com/hitz-zentroa/latxa`
 
 ### Citation
 
@@ -26,13 +33,21 @@ Homepage: `https://github.com/orai-nlp/BasqueGLUE`
   url       = {https://aclanthology.org/2022.lrec-1.172}
 }
 
+@misc{etxaniz2024latxa,
+      title={Latxa: An Open Language Model and Evaluation Suite for Basque},
+      author={Julen Etxaniz and Oscar Sainz and Naiara Perez and Itziar Aldabe and German Rigau and Eneko Agirre and Aitor Ormazabal and Mikel Artetxe and Aitor Soroa},
+      year={2024},
+      eprint={2403.20266},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL}
+}
 ```
 
 ### Groups and Tasks
 
 #### Groups
 
-* `basque-glue-lm-eval-v1`: First version of the implementation
+* `basque-glue`: First version of the implementation
 
 #### Tasks
 

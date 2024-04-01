@@ -4,7 +4,7 @@
 
 Title: Latxa: An Open Language Model and Evaluation Suite for Basque
 
-Abstract: `link to paper PDF or arXiv abstract goes here`
+Abstract: https://arxiv.org/abs/2403.20266
 
 EusReading consists of 352 reading comprehension exercises (irakurmena) sourced from the set of past EGA exams from 1998 to 2008. Each test generally has 10 multiple-choice questions, with 4 choices and a single correct answer. These exercises are more challenging than Belebele due to the complexity and length of the input texts. As a result, EusReading is useful to measure long context understanding of models.
 
@@ -15,10 +15,10 @@ Homepage: https://github.com/hitz-zentroa/latxa
 
 ```
 @misc{etxaniz2024latxa,
-      title={{L}atxa: An Open Language Model and Evaluation Suite for {B}asque},
+      title={Latxa: An Open Language Model and Evaluation Suite for Basque},
       author={Julen Etxaniz and Oscar Sainz and Naiara Perez and Itziar Aldabe and German Rigau and Eneko Agirre and Aitor Ormazabal and Mikel Artetxe and Aitor Soroa},
       year={2024},
-      eprint={},
+      eprint={2403.20266},
       archivePrefix={arXiv},
       primaryClass={cs.CL}
 }

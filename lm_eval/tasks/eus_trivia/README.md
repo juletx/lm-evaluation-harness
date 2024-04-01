@@ -4,7 +4,7 @@
 
 Title: Latxa: An Open Language Model and Evaluation Suite for Basque
 
-Abstract: `link to paper PDF or arXiv abstract goes here`
+Abstract: https://arxiv.org/abs/2403.20266
 
 EusTrivia consists of 1,715 trivia questions from multiple online sources. 56.3\% of the questions are elementary level (grades 3-6), while the rest are considered challenging. A significant portion of the questions focus specifically on the Basque Country, its language and culture. Each multiple-choice question contains two, three or four choices (3.84 on average) and a single correct answer. Five areas of knowledge are covered:
 
@@ -21,10 +21,10 @@ Homepage: https://github.com/hitz-zentroa/latxa
 
 ```
 @misc{etxaniz2024latxa,
-      title={{L}atxa: An Open Language Model and Evaluation Suite for {B}asque},
+      title={Latxa: An Open Language Model and Evaluation Suite for Basque},
       author={Julen Etxaniz and Oscar Sainz and Naiara Perez and Itziar Aldabe and German Rigau and Eneko Agirre and Aitor Ormazabal and Mikel Artetxe and Aitor Soroa},
       year={2024},
-      eprint={},
+      eprint={2403.20266},
       archivePrefix={arXiv},
       primaryClass={cs.CL}
 }
