@@ -8,7 +8,7 @@ validation_split: validation
 doc_to_choice: '{{[sentence1+", veritat? No, "+sentence2, sentence1+", veritat? Sí, "+sentence2]}}'
 process_docs: !function utils.process_docs_paraphrases
 doc_to_text: ''
-doc_to_target: label
+doc_to_target: '{{["No Parafrasis", "Parafrasis"].index(label)}}'
 metric_list:
   - metric: acc
     aggregation: mean

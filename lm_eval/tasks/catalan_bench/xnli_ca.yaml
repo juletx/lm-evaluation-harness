@@ -10,7 +10,7 @@ target_delimiter: ''
 process_docs: !function utils.process_doc_nli
 training_split: null
 validation_split: validation
-doc_to_target: label
+doc_to_target: '{{["entailment", "neutral", "contradiction"].index(label)}}'
 metric_list:
   - metric: acc
     aggregation: mean

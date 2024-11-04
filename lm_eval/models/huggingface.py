@@ -90,6 +90,10 @@ class HFLM(TemplateLM):
         **kwargs,
     ) -> None:
         super().__init__()
+        
+        ##### FIX SYSTEM NOT SUPPORTED ERROR #####
+        self.fix_template = None
+        
         # optionally: take in an already-initialized transformers.PreTrainedModel
         if not isinstance(pretrained, str):
             eval_logger.warning(
@@ -1322,6 +1326,28 @@ class HFLM(TemplateLM):
         """
         Method to apply a chat template to a list of chat history between user and model.
         """
+        import jinja2
+        if self.fix_template is None:
+            try:
+                prepared_chat = self.tokenizer.apply_chat_template(
+                    chat_history, tokenize=False, add_generation_prompt=True
+                )
+                self.fix_template = False
+                return prepared_chat
+            except jinja2.exceptions.TemplateError:
+                self.fix_template = True
+                eval_logger.error(
+                    "Failed to apply chat template. Replacing the system role with user role."
+                )
+        if self.fix_template:
+            first_content = chat_history[0]["content"]
+            chat_history = chat_history[1:]
+            chat_history[0]["content"] = first_content + "\n" + chat_history[0]["content"]
+            """
+            chat_history[0]["role"] = "user"
+            chat_history.insert(1, {"role": "assistant", "content": ""})
+            """
+        
         return self.tokenizer.apply_chat_template(
             chat_history, tokenize=False, add_generation_prompt=True
         )
