@@ -1,0 +1,10 @@
+group: basque-glue
+task:
+  - bec2016eu
+  - epec_koref_bin
+  - bhtc_v2
+  - qnlieu
+  - vaxx_stance
+  - wiceu
+metadata:
+  version: 1.0
