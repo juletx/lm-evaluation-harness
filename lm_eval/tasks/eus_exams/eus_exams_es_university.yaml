@@ -9,5 +9,9 @@ task:
   - eus_exams_es_opeehusubalterno
   - eus_exams_es_opeehutecnico
   - eus_exams_es_opeehutecnicob
+aggregate_metric_list:
+  - metric: acc
+    aggregation: mean
+    weight_by_size: true
 metadata:
   version: 1.0

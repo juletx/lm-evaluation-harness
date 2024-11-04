@@ -4,5 +4,9 @@ task:
   - eus_exams_es_city_council
   - eus_exams_es_university
   - eus_exams_es_health_system
+aggregate_metric_list:
+  - metric: acc
+    aggregation: mean
+    weight_by_size: true
 metadata:
   version: 1.0

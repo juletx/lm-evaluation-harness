@@ -2,5 +2,9 @@ group: eus_exams_es_city_council
 task:
   - eus_exams_es_opebilbao
   - eus_exams_es_opeayuntamientovitoria
+aggregate_metric_list:
+  - metric: acc
+    aggregation: mean
+    weight_by_size: true
 metadata:
   version: 1.0

@@ -2,5 +2,9 @@ group: bertaqa
 task:
   - bertaqa_en
   - bertaqa_eu
+aggregate_metric_list:
+  - metric: acc
+    aggregation: mean
+    weight_by_size: true
 metadata:
   version: 1.0

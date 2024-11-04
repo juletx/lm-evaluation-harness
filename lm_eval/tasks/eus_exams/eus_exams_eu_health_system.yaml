@@ -14,5 +14,9 @@ task:
   - eus_exams_eu_osakidetza5e
   - eus_exams_eu_osakidetza6e
   - eus_exams_eu_osakidetza7e
+aggregate_metric_list:
+  - metric: acc
+    aggregation: mean
+    weight_by_size: true
 metadata:
   version: 1.0

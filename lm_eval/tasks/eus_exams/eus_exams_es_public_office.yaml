@@ -4,5 +4,9 @@ task:
   - eus_exams_es_ejauxiliar
   - eus_exams_es_ejsubalterno
   - eus_exams_es_ejtecnico
+aggregate_metric_list:
+  - metric: acc
+    aggregation: mean
+    weight_by_size: true
 metadata:
   version: 1.0

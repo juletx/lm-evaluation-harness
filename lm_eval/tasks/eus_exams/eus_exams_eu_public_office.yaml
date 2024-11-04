@@ -4,5 +4,9 @@ task:
   - eus_exams_eu_ejlaguntza
   - eus_exams_eu_ejlaguntzaile
   - eus_exams_eu_ejteknikari
+aggregate_metric_list:
+  - metric: acc
+    aggregation: mean
+    weight_by_size: true
 metadata:
   version: 1.0

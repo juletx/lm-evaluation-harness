@@ -2,5 +2,9 @@ group: eus_exams_eu_city_council
 task:
   - eus_exams_eu_opebilbaoeu
   - eus_exams_eu_opegasteizkoudala
+aggregate_metric_list:
+  - metric: acc
+    aggregation: mean
+    weight_by_size: true
 metadata:
   version: 1.0
