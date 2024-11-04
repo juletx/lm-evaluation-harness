@@ -1,0 +1,8 @@
+group: eus_exams_es
+task:
+  - eus_exams_es_public_office
+  - eus_exams_es_city_council
+  - eus_exams_es_university
+  - eus_exams_es_health_system
+metadata:
+  version: 1.0

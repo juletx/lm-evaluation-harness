@@ -1,0 +1,6 @@
+group: eus_exams_eu_city_council
+task:
+  - eus_exams_eu_opebilbaoeu
+  - eus_exams_eu_opegasteizkoudala
+metadata:
+  version: 1.0

@@ -1,0 +1,8 @@
+group: eus_exams_es_public_office
+task:
+  - eus_exams_es_ejadministrativo
+  - eus_exams_es_ejauxiliar
+  - eus_exams_es_ejsubalterno
+  - eus_exams_es_ejtecnico
+metadata:
+  version: 1.0

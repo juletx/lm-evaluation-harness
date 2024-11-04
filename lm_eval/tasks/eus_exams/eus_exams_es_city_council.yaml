@@ -1,0 +1,6 @@
+group: eus_exams_es_city_council
+task:
+  - eus_exams_es_opebilbao
+  - eus_exams_es_opeayuntamientovitoria
+metadata:
+  version: 1.0

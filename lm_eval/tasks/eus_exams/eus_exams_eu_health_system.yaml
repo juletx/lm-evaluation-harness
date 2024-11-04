@@ -1,0 +1,18 @@
+group: eus_exams_eu_health_system
+task:
+  - eus_exams_eu_opeosakiadmineu
+  - eus_exams_eu_opeosakiauxenfeu
+  - eus_exams_eu_opeosakiauxeu
+  - eus_exams_eu_opeosakiceladoreu
+  - eus_exams_eu_opeosakienfeu
+  - eus_exams_eu_opeosakioperarioeu
+  - eus_exams_eu_opeosakitecnicoeu
+  - eus_exams_eu_opeosakivarioseu
+  - eus_exams_eu_osakidetza1e
+  - eus_exams_eu_osakidetza2e
+  - eus_exams_eu_osakidetza3e
+  - eus_exams_eu_osakidetza5e
+  - eus_exams_eu_osakidetza6e
+  - eus_exams_eu_osakidetza7e
+metadata:
+  version: 1.0

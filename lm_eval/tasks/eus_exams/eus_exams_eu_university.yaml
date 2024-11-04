@@ -1,0 +1,13 @@
+group: eus_exams_eu_university
+task:
+  - eus_exams_eu_opeehuadmineu
+  - eus_exams_eu_opeehuauxeu
+  - eus_exams_eu_opeehubiblioeu
+  - eus_exams_eu_opeehuderechoeu
+  - eus_exams_eu_opeehueconomicaseu
+  - eus_exams_eu_opeehuempresarialeseu
+  - eus_exams_eu_opeehusubalternoeu
+  - eus_exams_eu_opeehutecnicoeu
+  - eus_exams_eu_opeehuteknikarib
+metadata:
+  version: 1.0

@@ -1,0 +1,8 @@
+group: eus_exams_eu_public_office
+task:
+  - eus_exams_eu_ejadministrari
+  - eus_exams_eu_ejlaguntza
+  - eus_exams_eu_ejlaguntzaile
+  - eus_exams_eu_ejteknikari
+metadata:
+  version: 1.0

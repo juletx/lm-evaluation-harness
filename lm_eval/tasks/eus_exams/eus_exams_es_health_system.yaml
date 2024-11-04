@@ -1,0 +1,22 @@
+group: eus_exams_es_health_system
+task:
+  - eus_exams_es_opeosakiadmin
+  - eus_exams_es_opeosakiaux
+  - eus_exams_es_opeosakiauxenf
+  - eus_exams_es_opeosakicelador
+  - eus_exams_es_opeosakienf
+  - eus_exams_es_opeosakijuridico
+  - eus_exams_es_opeosakioperario
+  - eus_exams_es_opeosakitecnico
+  - eus_exams_es_opeosakivarios
+  - eus_exams_es_osakidetza1c
+  - eus_exams_es_osakidetza2c
+  - eus_exams_es_osakidetza3c
+  - eus_exams_es_osakidetza4c
+  - eus_exams_es_osakidetza5c
+  - eus_exams_es_osakidetza6c
+  - eus_exams_es_osakidetza7c
+  - eus_exams_es_osakidetza8c
+  - eus_exams_es_osakidetza9c
+metadata:
+  version: 1.0
