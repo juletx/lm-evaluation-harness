@@ -1,5 +1,8 @@
 group: basque_bench
 task:
+    - arc_eu_challenge
+    - piqa_eu
+    - bertaqa_eu
     - belebele_eus_Latn
     - xstorycloze_eu
     - flores_eu
