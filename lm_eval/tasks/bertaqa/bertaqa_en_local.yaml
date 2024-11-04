@@ -1,0 +1,5 @@
+task: bertaqa_en_local
+include: _bertaqa_template
+dataset_name: en
+process_docs: !function utils.process_docs_local
+doc_to_text: "Question: {{question}}\nA: {{candidates[0]}}\nB: {{candidates[1]}}\nC: {{candidates[2]}}\nAnswer:"

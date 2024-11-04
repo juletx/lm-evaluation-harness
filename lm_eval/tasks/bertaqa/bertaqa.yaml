@@ -1,0 +1,6 @@
+group: bertaqa
+task:
+  - bertaqa_en
+  - bertaqa_eu
+metadata:
+  version: 1.0
