@@ -1,0 +1,17 @@
+task: ehqa
+dataset_path: juletxara/EHQA
+dataset_name: default
+training_split: null
+validation_split: null
+test_split: test
+fewshot_split: test
+output_type: multiple_choice
+doc_to_text: "Question: {{question}}\n{{choices[0]}}\n{{choices[1]}}\n{{choices[2]}}\n{{choices[3]}}\nAnswer:"
+doc_to_choice: ["a", "b", "c", "d"]
+doc_to_target: "{{choices.index(answer)}}"
+metric_list:
+  - metric: acc
+    aggregation: mean
+    higher_is_better: true
+metadata:
+  version: 0.0
