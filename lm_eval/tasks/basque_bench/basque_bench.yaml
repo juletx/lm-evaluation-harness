@@ -1,7 +1,6 @@
 group: basque_bench
 task:
     - arc_eu_challenge
-    - piqa_eu
     - bertaqa_eu
     - belebele_eus_Latn
     - xstorycloze_eu
@@ -17,5 +16,6 @@ task:
     - xcopa_eu
     - mgsm_direct_eu
     - mgsm_native_cot_eu
+    - piqa_eu
 metadata:
   version: 1.0
