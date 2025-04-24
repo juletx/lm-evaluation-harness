@@ -1,0 +1,21 @@
+training_split: null
+validation_split: null
+test_split: test
+fewshot_split: train
+fewshot_config:
+  sampler: first_n
+num_fewshot: 4
+output_type: multiple_choice
+doc_to_text: "Context: {{context}}\nQuestion: {{question}}\nChoices:\nA: {{ans0}}\nB: {{ans1}}\nC: {{ans2}}\nAnswer:"
+doc_to_choice: ["A", "B", "C"]
+doc_to_target: label
+process_results: !function utils.process_results
+metric_list:
+  - metric: acc
+    aggregation: mean
+    higher_is_better: true
+  - metric: bias
+    aggregation: !function utils.aggregate_bias
+    higher_is_better: true
+metadata:
+  version: 0.0

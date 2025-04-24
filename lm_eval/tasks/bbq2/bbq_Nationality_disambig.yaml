@@ -1,0 +1,10 @@
+task: bbq_Nationality_disambig
+dataset_path: json
+dataset_name: null
+dataset_kwargs:
+  data_files:
+    - split: test
+      path: /gaueko0/users/jetxaniz007/phd/lm_eval/lm-evaluation-harness/lm_eval/tasks/bbq/bbq/data/Nationality_disambig.jsonl
+    - split: train
+      path: /gaueko0/users/jetxaniz007/phd/lm_eval/lm-evaluation-harness/lm_eval/tasks/bbq/fewshot/noNazionalitate_4s.jsonl
+include: bbq_template.yaml

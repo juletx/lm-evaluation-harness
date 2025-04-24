@@ -1,0 +1,10 @@
+task: basqbbq_Adin_ambig
+dataset_path: json
+dataset_name: null
+dataset_kwargs:
+  data_files:
+  - split: test
+    path: /gaueko0/users/jetxaniz007/phd/lm_eval/lm-evaluation-harness/lm_eval/tasks/basqbbq/BasqBBQ/data/BasqBBQ/Adin_ambig.jsonl
+  - split: train
+    path: /gaueko0/users/jetxaniz007/phd/lm_eval/lm-evaluation-harness/lm_eval/tasks/basqbbq/fewshot/noAdin_4s.jsonl
+include: basqbbq_template.yaml
