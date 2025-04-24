@@ -1,0 +1,16 @@
+task: winogrande_en
+dataset_path: orai-nlp/WinoGrande_HT_eu_sample
+dataset_name: en
+training_split: null
+validation_split: null
+test_split: test
+output_type: multiple_choice
+doc_to_text: !function preprocess_winogrande.doc_to_text
+doc_to_target: !function preprocess_winogrande.doc_to_target
+doc_to_choice: !function preprocess_winogrande.doc_to_choice
+metric_list:
+  - metric: acc
+    aggregation: mean
+    higher_is_better: true
+metadata:
+  version: 1.0
