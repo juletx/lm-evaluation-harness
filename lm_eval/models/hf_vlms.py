@@ -1,4 +1,5 @@
 import copy
+import logging
 from typing import Dict, List, Optional, Tuple, Union
 
 import torch
@@ -7,7 +8,6 @@ import transformers
 from tqdm import tqdm
 from transformers import BatchEncoding
 
-from lm_eval import utils
 from lm_eval.api.instance import Instance
 from lm_eval.api.registry import register_model
 from lm_eval.models.huggingface import HFLM
@@ -24,7 +24,7 @@ from lm_eval.models.utils import (
 DEFAULT_IMAGE_PLACEHOLDER = "<image>"
 
 
-eval_logger = utils.eval_logger
+eval_logger = logging.getLogger(__name__)
 
 
 @register_model("hf-multimodal")
@@ -45,15 +45,22 @@ class HFMultimodalLM(HFLM):
         # TODO: handle whitespace in image placeholder (replacement)
         max_images: Optional[int] = 999,
         convert_img_format=False,
+        min_pixels: Optional[int] = None,
+        max_pixels: Optional[int] = None,
         **kwargs,
     ):
+        # init pixels before calling tokenizer creation to avoid errors
+        self.pixels = ({"min_pixels": min_pixels} if min_pixels else {}) | (
+            {"max_pixels": max_pixels} if max_pixels else {}
+        )
+
         # We initialize using HFLM's init. Sub-methods like _create_model and _create_tokenizer
         # modify init behavior.
         super().__init__(pretrained, **kwargs)
 
-        assert (
-            self.batch_size != "auto"
-        ), "Batch size 'auto' is not yet supported for hf-multimodal models."
+        assert self.batch_size != "auto", (
+            "Batch size 'auto' is not yet supported for hf-multimodal models."
+        )
         self.chat_applied: bool = False
         # TODO: phi-3.5 "image placeholders" are <image_1>, <image_2>, ... in order. how to handle this case
 
@@ -73,9 +80,9 @@ class HFMultimodalLM(HFLM):
                     or getattr(self.config, "image_token_index", None)
                 )
             )
-            assert (
-                self.image_token_id is not None
-            ), "Must have a non-None image_token_id to evaluate a Hugging Face AutoModelForVision2Seq model. Please pass `image_token_id` in `--model_args` if model's config does not already specify one."
+            assert self.image_token_id is not None, (
+                "Must have a non-None image_token_id to evaluate a Hugging Face AutoModelForVision2Seq model. Please pass `image_token_id` in `--model_args` if model's config does not already specify one."
+            )
             # get the string this token ID corresponds to
             self.image_token = self.tok_decode(
                 [self.image_token_id], skip_special_tokens=False
@@ -135,6 +142,7 @@ class HFMultimodalLM(HFLM):
             model_name,
             revision=revision,
             trust_remote_code=trust_remote_code,
+            **self.pixels,
             # use_fast=use_fast_tokenizer,
         )
 

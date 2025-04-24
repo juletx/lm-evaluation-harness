@@ -1,8 +1,9 @@
 import copy
+import logging
 import os
 from datetime import timedelta
 from pathlib import Path
-from typing import Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import jinja2
 import torch
@@ -39,7 +40,7 @@ from lm_eval.models.utils import (
 )
 
 
-eval_logger = utils.eval_logger
+eval_logger = logging.getLogger(__name__)
 
 
 @register_model("hf-auto", "hf", "huggingface")
@@ -73,6 +74,7 @@ class HFLM(TemplateLM):
         max_length: Optional[int] = None,
         device: Optional[str] = "cuda",
         dtype: Optional[Union[str, torch.dtype]] = "auto",
+        softmax_dtype: Optional[Union[str, torch.dtype]] = None,
         batch_size: Optional[Union[int, str]] = 1,
         max_batch_size: Optional[int] = 64,
         trust_remote_code: Optional[bool] = False,
@@ -99,7 +101,9 @@ class HFLM(TemplateLM):
             eval_logger.warning(
                 "`pretrained` model kwarg is not of type `str`. Many other model arguments may be ignored. Please do not launch via accelerate or use `parallelize=True` if passing an existing model this way."
             )
-            assert not parallelize, "`parallelize=True` is not compatible with passing pre-initialized model to `pretrained`"
+            assert not parallelize, (
+                "`parallelize=True` is not compatible with passing pre-initialized model to `pretrained`"
+            )
             self._model = pretrained
             self._device = self._model.device
             self._config = self._model.config
@@ -181,6 +185,7 @@ class HFLM(TemplateLM):
             trust_remote_code=trust_remote_code,
             use_fast_tokenizer=use_fast_tokenizer,
             gguf_file=gguf_file,
+            add_bos_token=add_bos_token,
         )
 
         # if we passed `pretrained` as a string, initialize our model now
@@ -200,6 +205,7 @@ class HFLM(TemplateLM):
                 autogptq=autogptq,
                 gptqmodel=gptqmodel,
                 gguf_file=gguf_file,
+                quantization_config=getattr(self.config, "quantization_config", None),
                 **kwargs,
             )
 
@@ -229,6 +235,9 @@ class HFLM(TemplateLM):
         self.batch_schedule = 1
         self.batch_sizes = {}
         self.max_batch_size = max_batch_size
+        self.softmax_dtype = (
+            get_dtype(softmax_dtype) if softmax_dtype is not None else None
+        )
 
         if str(batch_size).startswith("auto"):
             batch_size = batch_size.split(":")
@@ -542,6 +551,7 @@ class HFLM(TemplateLM):
         autogptq: Optional[Union[bool, str]] = False,
         gptqmodel: Optional[bool] = False,
         gguf_file: Optional[str] = None,
+        quantization_config: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> None:
         """
@@ -571,9 +581,9 @@ class HFLM(TemplateLM):
 
         if not autogptq and not gptqmodel:
             if model_kwargs.get("load_in_4bit", None):
-                assert (
-                    transformers.__version__ >= "4.30.0"
-                ), "load_in_4bit requires transformers >= 4.30.0"
+                assert transformers.__version__ >= "4.30.0", (
+                    "load_in_4bit requires transformers >= 4.30.0"
+                )
             if transformers.__version__ >= "4.30.0":
                 if model_kwargs.get("load_in_4bit", None):
                     if model_kwargs.get("bnb_4bit_compute_dtype", None):
@@ -587,6 +597,7 @@ class HFLM(TemplateLM):
                 torch_dtype=get_dtype(dtype),
                 trust_remote_code=trust_remote_code,
                 gguf_file=gguf_file,
+                quantization_config=quantization_config,
                 **model_kwargs,
             )
         else:
@@ -685,6 +696,7 @@ class HFLM(TemplateLM):
         trust_remote_code: Optional[bool] = False,
         use_fast_tokenizer: Optional[bool] = True,
         gguf_file: Optional[str] = None,
+        add_bos_token: Optional[bool] = False,
     ) -> None:
         """
         Helper method during initialization.
@@ -702,6 +714,9 @@ class HFLM(TemplateLM):
             kwargs["gguf_file"] = gguf_file
         else:
             kwargs["use_fast"] = use_fast_tokenizer
+
+        if add_bos_token:
+            kwargs["add_bos_token"] = True
 
         if tokenizer:
             if isinstance(tokenizer, str):
@@ -757,7 +772,11 @@ class HFLM(TemplateLM):
                     (batch_size, max_length), device=self.device
                 ).long()
             for _ in range(5):
-                out = F.log_softmax(self._model_call(test_batch, **call_kwargs), dim=-1)  # noqa: F841
+                out = F.log_softmax(  # noqa: F841
+                    self._model_call(test_batch, **call_kwargs),
+                    dim=-1,
+                    dtype=self.softmax_dtype,
+                )
 
             return batch_size
 
@@ -905,16 +924,16 @@ class HFLM(TemplateLM):
         self, logits: torch.Tensor, contlen: int = None, inplen: int = None
     ) -> torch.Tensor:
         if self.backend == "causal":
-            assert (
-                contlen and inplen
-            ), "Must pass input len and cont. len to select scored logits for causal LM"
+            assert contlen and inplen, (
+                "Must pass input len and cont. len to select scored logits for causal LM"
+            )
             # discard right-padding.
             # also discard the input/context tokens. we'll only score continuations.
             logits = logits[inplen - contlen : inplen]
         elif self.backend == "seq2seq":
-            assert (
-                contlen and not inplen
-            ), "Selecting scored logits for Seq2SeqLM requires only cont. len"
+            assert contlen and not inplen, (
+                "Selecting scored logits for Seq2SeqLM requires only cont. len"
+            )
             # only discard right-padding.
             # the logits input to this fn only contain decoder-side tokens.
             logits = logits[:contlen]
@@ -1189,7 +1208,9 @@ class HFLM(TemplateLM):
                 }
 
             multi_logits = F.log_softmax(
-                self._model_call(batched_inps, **call_kwargs), dim=-1
+                self._model_call(batched_inps, **call_kwargs),
+                dim=-1,
+                dtype=self.softmax_dtype,
             )  # [batch, padding_length (inp or cont), vocab]
 
             for (request_str, ctx_tokens, _), logits, inplen, cont_toks in zip(
@@ -1329,9 +1350,9 @@ class HFLM(TemplateLM):
             if self.backend == "causal":
                 # max len for inputs = max length, minus room to generate the max new tokens
                 max_ctx_len = self.max_length - max_gen_toks
-                assert (
-                    max_ctx_len > 0
-                ), f"Invalid configuration: requested max tokens to generate ({max_gen_toks}) must be less than model's maximum sequence length ({self.max_length})."
+                assert max_ctx_len > 0, (
+                    f"Invalid configuration: requested max tokens to generate ({max_gen_toks}) must be less than model's maximum sequence length ({self.max_length})."
+                )
             elif self.backend == "seq2seq":
                 # max len for inputs = encoder's whole max_length
                 max_ctx_len = self.max_length

@@ -3,6 +3,7 @@ import asyncio
 import copy
 import itertools
 import json
+import logging
 from functools import cached_property
 from typing import (
     Any,
@@ -37,6 +38,8 @@ from lm_eval.api.model import TemplateLM
 from lm_eval.models.utils import Collator, chunks, configure_pad_token
 
 
+eval_logger = logging.getLogger(__name__)
+
 LogLikelihoodInputs = Tuple[Tuple[str, str], List[int], List[int]]
 
 
@@ -46,9 +49,6 @@ class JsonChatStr(NamedTuple):
 
     def encode(self, encoding):
         return self.prompt.encode(encoding)
-
-
-eval_logger = utils.eval_logger
 
 
 class TemplateAPI(TemplateLM):
@@ -195,9 +195,9 @@ class TemplateAPI(TemplateLM):
         """Helper method to transform the prompt into the expected API input format. messages consist of batched requests"""
         if isinstance(messages[0], JsonChatStr):
             # for chat completions we need to decode the json string to list[dict,...]
-            assert (
-                self._batch_size == 1
-            ), "non-tokenized chat requests are only supported with batch_size=1"
+            assert self._batch_size == 1, (
+                "non-tokenized chat requests are only supported with batch_size=1"
+            )
             # list[dict["role":..., "content":...],...]
             return json.loads(messages[0].prompt)
 
@@ -265,7 +265,7 @@ class TemplateAPI(TemplateLM):
             )
         else:
             # bit of a hack. We'll load back before sending to the API
-            return JsonChatStr(json.dumps(chat_history))
+            return JsonChatStr(json.dumps(chat_history, ensure_ascii=False))
 
     @cached_property
     def eot_token_id(self) -> Optional[int]:
@@ -475,7 +475,7 @@ class TemplateAPI(TemplateLM):
         **kwargs,
     ) -> Union[List[List[str]], List[List[Tuple[float, bool]]]]:
         ctxlens = ctxlens if ctxlens else [None] * len(requests)
-        conn = TCPConnector(limit=self._concurrent)
+        conn = TCPConnector(limit=self._concurrent, ssl=self.verify_certificate)
         async with ClientSession(
             connector=conn, timeout=ClientTimeout(total=self.timeout)
         ) as session:
@@ -506,9 +506,9 @@ class TemplateAPI(TemplateLM):
             return await tqdm_asyncio.gather(*tasks, desc="Requesting API")
 
     def _loglikelihood_tokens(self, requests, **kwargs) -> List[Tuple[float, bool]]:
-        assert (
-            self.tokenizer is not None
-        ), "Tokenizer is required for loglikelihood tasks to compute context lengths."
+        assert self.tokenizer is not None, (
+            "Tokenizer is required for loglikelihood tasks to compute context lengths."
+        )
         res = []
 
         def _collate(req: LogLikelihoodInputs):

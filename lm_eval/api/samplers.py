@@ -1,3 +1,5 @@
+import logging
+import warnings
 from functools import partial
 from typing import TYPE_CHECKING, Iterable, Optional, Union
 
@@ -8,6 +10,8 @@ if TYPE_CHECKING:
     from random import Random
 
     from lm_eval.api.task import ConfigurableTask, Task
+
+eval_logger = logging.getLogger("lm-eval")
 
 
 class ContextSampler:
@@ -71,9 +75,9 @@ class ContextSampler:
                 )
             self.docs = self.docs.select(fewshot_indices)
 
-    def get_context(self, doc: dict, num_fewshot: int, assistant_prefill: str = None):
+    def get_context(self, doc: dict, num_fewshot: int, gen_prefix: str = None):
         # draw an extra fewshot sample if using same split as evaluating on
-        prefix = assistant_prefill + " " if assistant_prefill else ""
+        prefix = gen_prefix + " " if gen_prefix else ""
         n_samples = (
             num_fewshot + 1
             if self.config.fewshot_split == self.config.test_split
@@ -97,6 +101,13 @@ class ContextSampler:
                 labeled_examples += self.doc_to_choice(doc)[doc_content]
 
             if doc_target != "":
+                if self.target_delimiter.isspace() and str(doc_target)[0].isspace():
+                    # TODO: add logger warn once here.
+                    warnings.warn(
+                        "Both target_delimiter and target start with a space. This may cause issues.",
+                        Warning,
+                        stacklevel=2,
+                    )
                 labeled_examples += self.target_delimiter
                 labeled_examples += prefix
                 labeled_examples += (
@@ -115,10 +126,10 @@ class ContextSampler:
         doc: dict,
         num_fewshot: int,
         fewshot_as_multiturn: bool = False,
-        assistant_prefill: Optional[str] = None,
+        gen_prefix: Optional[str] = None,
     ):
         # TODO: Do we need any other delimiter
-        prefix = assistant_prefill + " " if assistant_prefill else ""
+        prefix = gen_prefix + " " if gen_prefix else ""
         chat_history = []
         # draw an extra fewshot sample if using same split as evaluating on
         n_samples = (
@@ -163,7 +174,7 @@ class ContextSampler:
                 {
                     "role": "user",
                     "content": self.get_context(
-                        doc, num_fewshot, assistant_prefill=assistant_prefill
+                        doc, num_fewshot, gen_prefix=gen_prefix
                     ),
                 }
             )
@@ -184,9 +195,9 @@ class FirstNSampler(ContextSampler):
         Draw the first `n` samples in order from the specified split.
         Used for tasks with "canonical" ordered fewshot examples, such as MMLU and CMMLU.
         """
-        assert (
-            n <= len(self.docs)
-        ), f"Error: number of fewshot samples requested exceeds the {len(self.docs)} that are available."
+        assert n <= len(self.docs), (
+            f"Error: number of fewshot samples requested exceeds the {len(self.docs)} that are available."
+        )
         return self.docs[:n]
 
 
