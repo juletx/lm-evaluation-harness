@@ -295,6 +295,12 @@ def setup_parser() -> argparse.ArgumentParser:
         help="Confirm that you understand the risks of running unsafe code for tasks that require it",
     )
     parser.add_argument(
+        "--mcq_to_generative",
+        action="store_true",
+        default=False,
+        help="If True, convert multiple choice tasks to generative tasks",
+    )
+    parser.add_argument(
         "--metadata",
         type=json.loads,
         default=None,
@@ -357,7 +363,11 @@ def cli_evaluate(args: Union[argparse.Namespace, None] = None) -> None:
         else simple_parse_args_string(args.metadata)
     )
 
-    task_manager = TaskManager(include_path=args.include_path, metadata=metadata)
+    task_manager = TaskManager(
+        include_path=args.include_path,
+        metadata=metadata,
+        mcq_to_generative=args.mcq_to_generative,
+    )
 
     if "push_samples_to_hub" in evaluation_tracker_args and not args.log_samples:
         eval_logger.warning(

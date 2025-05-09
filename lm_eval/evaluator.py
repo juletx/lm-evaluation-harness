@@ -76,6 +76,7 @@ def simple_evaluate(
     fewshot_random_seed: int = 1234,
     confirm_run_unsafe_code: bool = False,
     metadata: Optional[dict] = None,
+    mcq_to_generative: bool = False,
 ):
     """Instantiate and evaluate a model on a list of tasks.
 
@@ -140,6 +141,8 @@ def simple_evaluate(
         Random seed for fewshot sampler random generator. If set to None, the seed of generator will be set to None.
     :param metadata: dict
         Additional metadata to be added to the task manager. Will get passed to the download function of the task.
+    :param mcq_to_generative: bool
+        Whether to convert multiple-choice questions to generative format.
 
     return
         Dictionary of results
@@ -259,7 +262,7 @@ def simple_evaluate(
             if isinstance(model_args, dict)
             else {}
         ) | (metadata or {})
-        task_manager = TaskManager(metadata=metadata)
+        task_manager = TaskManager(metadata=metadata, mcq_to_generative=mcq_to_generative)
 
     task_dict = get_task_dict(
         tasks,

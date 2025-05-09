@@ -7,13 +7,39 @@ from typing import Dict, List, Mapping, Optional, Union
 
 from lm_eval import utils
 from lm_eval.api.group import ConfigurableGroup, GroupConfig
-from lm_eval.api.task import ConfigurableTask, Task
+from lm_eval.api.task import ConfigurableTask, Generate_MultipleChoice, Task
 from lm_eval.evaluator_utils import get_subtask_list
 
 
 GROUP_ONLY_KEYS = list(GroupConfig().to_dict().keys())
 
 eval_logger = logging.getLogger(__name__)
+
+
+def convert_mcq_to_generative(cfg: dict):
+    cfg["output_type"] = "generate_until"
+    cfg["target_delimiter"] = "\n\n"
+    cfg["generation_kwargs"] = {"until": [], "max_gen_toks": 1}
+    cfg["filter_list"] = [
+        {
+            "name": "strict_match",
+            "filter": [
+                {"function": "remove_whitespace"},
+                {"function": "take_first"},
+            ],
+        }
+    ]
+    cfg["metric_list"] = [
+        {
+            "metric": "exact_match",
+            "aggregation": "mean",
+            "higher_is_better": True,
+            "ignore_case": True,
+            "ignore_punctuation": True,
+            "regexes_to_ignore": ["\\$", "\\.$"],
+        }
+    ]
+    return cfg
 
 
 class TaskManager:
@@ -28,6 +54,7 @@ class TaskManager:
         include_path: Optional[Union[str, List]] = None,
         include_defaults: bool = True,
         metadata: Optional[dict] = None,
+        mcq_to_generative: bool = False,
     ) -> None:
         if verbosity is not None:
             utils.setup_logging(verbosity)
@@ -53,6 +80,7 @@ class TaskManager:
         )
 
         self.task_group_map = collections.defaultdict(list)
+        self.mcq_to_generative = mcq_to_generative
 
     def initialize_tasks(
         self,
@@ -283,7 +311,13 @@ class TaskManager:
                     config["metadata"] = config.get("metadata", {}) | self.metadata
                 else:
                     config["metadata"] = config.get("metadata", {})
-                task_object = ConfigurableTask(config=config)
+                if self.mcq_to_generative and (
+                    config.get("output_type") == "multiple_choice"
+                ):
+                    config = convert_mcq_to_generative(config)
+                    task_object = Generate_MultipleChoice(config=config)
+                else:
+                    task_object = ConfigurableTask(config=config)
 
             return {task: task_object}
 

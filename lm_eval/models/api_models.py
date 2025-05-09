@@ -481,7 +481,7 @@ class TemplateAPI(TemplateLM):
         ) as session:
             retry_: Callable[..., Awaitable[Any]] = retry(
                 stop=stop_after_attempt(self.max_retries),
-                wait=wait_exponential(multiplier=0.5, min=1, max=10),
+                wait=wait_exponential(multiplier=10, min=10, max=60),
                 reraise=True,
             )(self.amodel_call)
             # Create tasks for each batch of request
@@ -537,7 +537,7 @@ class TemplateAPI(TemplateLM):
 
                 outputs = retry(
                     stop=stop_after_attempt(self.max_retries),
-                    wait=wait_exponential(multiplier=0.5, min=1, max=10),
+                    wait=wait_exponential(multiplier=10, min=10, max=60),
                     reraise=True,
                 )(self.model_call)(messages=inputs, generate=False)
                 if isinstance(outputs, dict):
@@ -622,7 +622,7 @@ class TemplateAPI(TemplateLM):
                 req = encodings_list if self.tokenized_requests else contexts
                 outputs = retry(
                     stop=stop_after_attempt(self.max_retries),
-                    wait=wait_exponential(multiplier=0.5, min=1, max=10),
+                    wait=wait_exponential(multiplier=10, min=10, max=60),
                     reraise=True,
                 )(self.model_call)(
                     messages=req,
