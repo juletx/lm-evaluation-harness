@@ -5,15 +5,15 @@ doc_to_text: '{% if answer is not none %}{{question+"\nRespuesta paso a paso:"}}
 filter_list:
 - filter:
   - function: regex
-    regex_pattern: La respuesta es (\-?[0-9\.\,]+)
-  - function: take_first
-  name: strict-match
-- filter:
-  - function: regex
     group_select: -1
     regex_pattern: (-?[$0-9.,]{2,})|(-?[0-9]+)
   - function: take_first
   name: flexible-extract
+- filter:
+  - function: regex
+    regex_pattern: La respuesta es (\-?[0-9\.\,]+)
+  - function: take_first
+  name: strict-match
 generation_kwargs:
   do_sample: false
   until:
