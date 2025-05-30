@@ -1,10 +1,4 @@
 task: bbq_Age_ambig
-dataset_path: json
-dataset_name: null
-dataset_kwargs:
-  data_files:
-  - split: test
-    path: /gaueko0/users/jetxaniz007/phd/lm_eval/lm-evaluation-harness/lm_eval/tasks/bbq/bbq/data/Age_ambig.jsonl
-  - split: train
-    path: /gaueko0/users/jetxaniz007/phd/lm_eval/lm-evaluation-harness/lm_eval/tasks/bbq/fewshot/noAdin_4s.jsonl
+dataset_path: HiTZ/bbq
+dataset_name: Age_ambig
 include: bbq_template.yaml

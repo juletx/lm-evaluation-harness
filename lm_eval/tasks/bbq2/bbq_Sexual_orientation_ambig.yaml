@@ -1,10 +1,4 @@
 task: bbq_Sexual_orientation_ambig
-dataset_path: json
-dataset_name: null
-dataset_kwargs:
-  data_files:
-    - split: test
-      path: /gaueko0/users/jetxaniz007/phd/lm_eval/lm-evaluation-harness/lm_eval/tasks/bbq/bbq/data/Sexual_orientation_ambig.jsonl
-    - split: train
-      path: /gaueko0/users/jetxaniz007/phd/lm_eval/lm-evaluation-harness/lm_eval/tasks/bbq/fewshot/noOrientazio_sexual_4s.jsonl
+dataset_path: HiTZ/bbq
+dataset_name: Sexual_orientation_ambig
 include: bbq_template.yaml

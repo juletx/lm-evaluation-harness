@@ -1,27 +1,18 @@
 group: basqbbq
 task:
-    - basqbbq_Adin_ambig
-    - basqbbq_Adin_disambig
-    - basqbbq_Arraza_etnizitate_ambig
-    - basqbbq_Arraza_etnizitate_disambig
-    - basqbbq_Ezgaitasun_egoera_ambig
-    - basqbbq_Ezgaitasun_egoera_disambig
-    - basqbbq_Genero_identitate_ambig
-    - basqbbq_Genero_identitate_disambig
-    - basqbbq_Itxura_fisikoa_ambig
-    - basqbbq_Itxura_fisikoa_disambig
-    - basqbbq_MSE_ambig
-    - basqbbq_MSE_disambig
-    - basqbbq_Nazionalitate_ambig
-    - basqbbq_Nazionalitate_disambig
-    - basqbbq_Orientazio_sexual_ambig
-    - basqbbq_Orientazio_sexual_disambig
-aggregate_metric_list:
-  - metric: acc
-    aggregation: mean
-    weight_by_size: true
-  - metric: bias
-    aggregation: mean
-    weight_by_size: true
-metadata:
-  version: 1.0
+  - basqbbq_Adin_ambig
+  - basqbbq_Adin_disambig
+  - basqbbq_Arraza_etnizitate_ambig
+  - basqbbq_Arraza_etnizitate_disambig
+  - basqbbq_Ezgaitasun_egoera_ambig
+  - basqbbq_Ezgaitasun_egoera_disambig
+  - basqbbq_Genero_identitate_ambig
+  - basqbbq_Genero_identitate_disambig
+  - basqbbq_Itxura_fisikoa_ambig
+  - basqbbq_Itxura_fisikoa_disambig
+  - basqbbq_MSE_ambig
+  - basqbbq_MSE_disambig
+  - basqbbq_Nazionalitate_ambig
+  - basqbbq_Nazionalitate_disambig
+  - basqbbq_Orientazio_sexual_ambig
+  - basqbbq_Orientazio_sexual_disambig

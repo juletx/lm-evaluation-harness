@@ -1,29 +1,20 @@
 group: bbq
 task:
-    - bbq_Age_ambig
-    - bbq_Age_disambig
-    - bbq_Disability_status_ambig
-    - bbq_Disability_status_disambig
-    - bbq_Gender_identity_ambig
-    - bbq_Gender_identity_disambig
-    - bbq_Nationality_ambig
-    - bbq_Nationality_disambig
-    - bbq_Physical_appearance_ambig
-    - bbq_Physical_appearance_disambig
-    - bbq_Race_ethnicity_ambig
-    - bbq_Race_ethnicity_disambig
-    - bbq_Religion_ambig
-    - bbq_Religion_disambig
-    - bbq_SES_ambig
-    - bbq_SES_disambig
-    - bbq_Sexual_orientation_ambig
-    - bbq_Sexual_orientation_disambig
-aggregate_metric_list:
-  - metric: acc
-    aggregation: mean
-    weight_by_size: true
-  - metric: bias
-    aggregation: mean
-    weight_by_size: true
-metadata:
-  version: 1.0
+  - bbq_Age_ambig
+  - bbq_Age_disambig
+  - bbq_Disability_status_ambig
+  - bbq_Disability_status_disambig
+  - bbq_Gender_identity_ambig
+  - bbq_Gender_identity_disambig
+  - bbq_Nationality_ambig
+  - bbq_Nationality_disambig
+  - bbq_Physical_appearance_ambig
+  - bbq_Physical_appearance_disambig
+  - bbq_Race_ethnicity_ambig
+  - bbq_Race_ethnicity_disambig
+  - bbq_Religion_ambig
+  - bbq_Religion_disambig
+  - bbq_SES_ambig
+  - bbq_SES_disambig
+  - bbq_Sexual_orientation_ambig
+  - bbq_Sexual_orientation_disambig

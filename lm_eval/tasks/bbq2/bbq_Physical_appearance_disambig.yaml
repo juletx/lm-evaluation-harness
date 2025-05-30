@@ -1,10 +1,4 @@
 task: bbq_Physical_appearance_disambig
-dataset_path: json
-dataset_name: null
-dataset_kwargs:
-  data_files:
-    - split: test
-      path: /gaueko0/users/jetxaniz007/phd/lm_eval/lm-evaluation-harness/lm_eval/tasks/bbq/bbq/data/Physical_appearance_disambig.jsonl
-    - split: train
-      path: /gaueko0/users/jetxaniz007/phd/lm_eval/lm-evaluation-harness/lm_eval/tasks/bbq/fewshot/noItxura_fisikoa_4s.jsonl
+dataset_path: HiTZ/bbq
+dataset_name: Physical_appearance_disambig
 include: bbq_template.yaml

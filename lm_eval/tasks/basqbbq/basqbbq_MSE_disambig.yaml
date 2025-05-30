@@ -1,10 +1,4 @@
 task: basqbbq_MSE_disambig
-dataset_path: json
-dataset_name: null
-dataset_kwargs:
-  data_files:
-  - split: test
-    path: /gaueko0/users/jetxaniz007/phd/lm_eval/lm-evaluation-harness/lm_eval/tasks/basqbbq/BasqBBQ/data/BasqBBQ/MSE_disambig.jsonl
-  - split: train
-    path: /gaueko0/users/jetxaniz007/phd/lm_eval/lm-evaluation-harness/lm_eval/tasks/basqbbq/fewshot/noMSE_4s.jsonl
+dataset_path: HiTZ/basqbbq
+dataset_name: MSE_disambig
 include: basqbbq_template.yaml
