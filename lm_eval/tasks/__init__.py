@@ -20,7 +20,7 @@ eval_logger = logging.getLogger(__name__)
 def convert_mcq_to_generative(cfg: dict):
     cfg["output_type"] = "generate_until"
     cfg["target_delimiter"] = "\n\n"
-    cfg["generation_kwargs"] = {"until": [], "max_gen_toks": 1}
+    cfg["generation_kwargs"] = {"until": []}
     cfg["filter_list"] = [
         {
             "name": "strict_match",
